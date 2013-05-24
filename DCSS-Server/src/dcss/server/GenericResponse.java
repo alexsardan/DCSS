@@ -10,10 +10,10 @@ package dcss.server;
  */
 public class GenericResponse {
     public String type;
-    public int dest;
+    public String dest;
     public byte[] data;
 
-    public GenericResponse(String type, int dest, byte[] data) {
+        public GenericResponse(String type, String dest, byte[] data) {
         this.type = type;
         this.dest = dest;
         this.data = data;
