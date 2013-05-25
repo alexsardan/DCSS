@@ -1,18 +1,19 @@
+
 package my.generic.lib;
 
-public class CreateFileRequestObject extends GenericRequest
+public class CreateFileResponseObject extends GenericResponse
 {
     public String fileName;
     public String accessType;
     public long fileLength;
     
-    public CreateFileRequestObject(String type, 
-                                   int session_key,
+    public CreateFileResponseObject(String type, 
+                                   String dest,
                                    String fileName,
                                    String access,
                                    long length)
     {
-        super(type, session_key);
+        super(type, dest);
         this.fileName = fileName;
         this.accessType = access;
         this.fileLength = length;
