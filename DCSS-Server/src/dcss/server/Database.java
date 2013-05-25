@@ -143,7 +143,7 @@ public class Database {
         return false;        
     }
     
-    public boolean browseFiles(int clientId)
+    public ArrayList<UploadFile> browseFiles(int clientId)
     {
         ArrayList<UploadFile> files = new ArrayList();
         
@@ -167,29 +167,30 @@ public class Database {
                             )
                         );
             }
-            if (files.size() > 0)
-            {
-                for(UploadFile u:files)
-                    System.out.println(u.toString());                
-            }
-            
+            return files;
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        return false;
+        return null;
     }
     
-    
-    public static void main( String[] args )
+    public String getPath(int id, String name, int clientId)
     {
-        try 
-        {
-            Database d = new Database(1);
-            d.browseFiles(1);        
-        } catch (Exception ex)
-        {
-            System.out.println(ex.toString());            
+        try {
+            this.st = this.con.prepareStatement("SELECT * from Files WHERE Id = ? AND Name = ?;");
+            this.st.setInt(1, id);
+            this.st.setString(2, name);
+            this.rs = this.st.executeQuery();
+            
+            if (this.rs.next())
+            {
+                if (this.rs.getInt("Private") == 0 || this.rs.getInt("Owner") == clientId)
+                    return this.rs.getString("Path");
+            }            
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }    
+        return "";
+    }  
 }
