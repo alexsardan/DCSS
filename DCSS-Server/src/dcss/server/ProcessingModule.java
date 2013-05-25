@@ -68,6 +68,9 @@ class RequestHandler implements Runnable
                 case "upload":
                     uploadFile(this.qenericRequest);
                     break;
+                case "download_first":
+                    downloadFile(this.qenericRequest);
+                    break;
                 case "download":
                     downloadFile(this.qenericRequest);
                     break;
@@ -150,7 +153,7 @@ class RequestHandler implements Runnable
         CreateFileRequestObject createFileReqObj = (CreateFileRequestObject)qenericRequest;
         
         String userHome = System.getProperty("user.home");
-        DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd");
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         String filePathString = userHome + "/SERVER" + this.idServer + "/" + 
                                 createFileReqObj.accessType + "/" + createFileReqObj.fileName +
                                 "_" + createFileReqObj.session_key + "_" + dateFormat.format(new Date());
@@ -219,7 +222,9 @@ class RequestHandler implements Runnable
                 String filePermission = uploadFileReqObj.filePath.substring(indexFilePermissionBegin, indexFileNameBegin);
                 int permission = filePermission.equals("private") ? 1 : 0;
                         
-                db.addFile(uploadFileReqObj.session_key, fileName, permission, uploadFileReqObj.filePath);
+                int firstUnderscore = fileName.lastIndexOf("_");
+                int secondUnderscore = fileName.lastIndexOf("_", firstUnderscore - 1);
+                db.addFile(uploadFileReqObj.session_key, fileName.substring(0, secondUnderscore), permission, uploadFileReqObj.filePath);
                 
                 ReplyMessage replyMessage = new ReplyMessage("create_user", "client", "ACK");
                 this.responseQueue.add(replyMessage);
@@ -268,6 +273,14 @@ class RequestHandler implements Runnable
                 Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+    
+    public void downloadFile(GenericRequest qenericRequest)
+    {
+    }
+    
+    public void exchangeDatabase(GenericRequest qenericRequest)
+    {
     }
 }
 
