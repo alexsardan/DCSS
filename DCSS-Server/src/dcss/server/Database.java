@@ -13,7 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import my.generic.lib.UploadFile;
+import my.generic.lib.*;
 
 
 public class Database {
@@ -26,8 +26,7 @@ public class Database {
     {
         String url = "jdbc:mysql://localhost:3306/fileserver_" + id;
         this.con = DriverManager.getConnection(url, "root", "student");  
-    }
-    
+    }    
     
     public boolean addUser(String name, String pass)
     {
@@ -233,4 +232,63 @@ public class Database {
         
         return false;
     }
+    
+        public ArrayList<UploadFile> getFiles()
+    {
+        ArrayList<UploadFile> files = new ArrayList();
+        
+        try {
+            this.st = this.con.prepareStatement("SELECT * from Files");           
+            this.rs = this.st.executeQuery();
+            
+            while(this.rs.next())
+            {
+                files.add(
+                            new UploadFile
+                            (
+                                this.rs.getInt("id"),
+                                this.rs.getString("Name"),
+                                this.rs.getInt("Owner"),
+                                this.rs.getInt("Private"),
+                                this.rs.getString("Path"),
+                                this.rs.getDate("DateAdded"),
+                                this.rs.getString("Users.Name")    
+                            )
+                        );
+            }
+            return files;
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return null;
+    }
+    
+    public ArrayList<User> getUsers()
+    {
+        ArrayList<User> users = new ArrayList();
+        
+        try {
+            this.st = this.con.prepareStatement("SELECT * FROM Users;");
+            
+            this.rs = this.st.executeQuery();
+            
+            while(this.rs.next())
+            {
+                users.add(
+                            new User
+                            (
+                                this.rs.getString("Name"),
+                                this.rs.getString("Password")
+                            )
+                        );
+            }
+            return users;
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+    
+
 }
