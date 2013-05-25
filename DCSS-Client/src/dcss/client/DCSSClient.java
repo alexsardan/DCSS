@@ -1,8 +1,9 @@
 package dcss.client;
 
 import java.io.BufferedReader;
-import java.io.IOException;
+import java.io.FileReader;
 import java.io.InputStreamReader;
+import java.net.Socket;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,11 +14,17 @@ public class DCSSClient {
     
     private int id;
     public boolean logedIn;
+    public int port;
+    public String type;
+    public RequestHandler serverRequest;
+    public ServerSelector serverSelector;
+    public ResponseHandler serverResponse;
     
     public DCSSClient(int id)
     {
         this.id = id;
         this.logedIn = false;
+        this.serverSelector = new ServerSelector();
     }
 
     public String processRequest(String req)
@@ -97,6 +104,38 @@ public class DCSSClient {
         DCSSClient client = new DCSSClient(1);
         try {
             BufferedReader console = new BufferedReader(new InputStreamReader(System.in));
+            BufferedReader cfgIn = new BufferedReader(new FileReader(args[0]));
+            
+            String cfgLine = cfgIn.readLine();
+            while (cfgLine != null) {
+                String[] parts = cfgLine.split(":");
+                switch(parts[0]) {
+                    case "port":
+                        client.port = Integer.parseInt(parts[1]);
+                        break;
+                    case "type":
+                        client.type = parts[1];
+                        switch(parts[1]) {
+                            case "TCP":
+                                client.serverSelector.selectServer();
+                                Socket sock = new Socket(client.serverSelector.getHost(), client.serverSelector.getPort());
+                                client.serverRequest = new TCPRequestHandler(sock);
+                                client.serverResponse = new TCPResponseHandler(sock);
+                                break;
+                            default :
+                                Logger.getLogger(DCSSClient.class.getName()).log(Level.SEVERE, "This type of connection is not supported: {0}", parts[1]);
+                                break;
+                        }
+                        break;
+                    case "s":
+                        client.serverSelector.addHosts(parts[1], Integer.parseInt(parts[2]));
+                        break;
+                }
+                cfgLine = cfgIn.readLine();
+            }
+            cfgIn.close();
+            
+            client.serverResponse.start();
             String command;
             
             System.out.print("> ");
@@ -105,9 +144,7 @@ public class DCSSClient {
                 if (command.equals("exit")) {
                     return;
                 } else {
-                  /* this.id = 1;
-                   
-                   System.out.println(processRequest(command));*/
+                    client.processRequest(command);
                 }
                 System.out.print("> ");
             }
