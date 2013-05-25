@@ -44,8 +44,8 @@ public class DCSSClient {
                     String name = st.nextToken();
                     String pass = st.nextToken();
                     
-                    LoginCreateRequestObject lcro = new LoginCreateRequestObject("login", this.id, name, pass);
-                                        
+                    LoginCreateRequestObject lcro = new LoginCreateRequestObject("create", this.id, name, pass);
+                    this.serverRequest.sendRequest(lcro);            
                     break;
                 }
                 else
@@ -56,7 +56,7 @@ public class DCSSClient {
                     String name = st.nextToken();
                     String pass = st.nextToken();
                     
-                    LoginCreateRequestObject lcro = new LoginCreateRequestObject("create_user", this.id, name, pass);
+                    LoginCreateRequestObject lcro = new LoginCreateRequestObject("login", this.id, name, pass);
                     
                     break;
                 }
@@ -144,7 +144,7 @@ public class DCSSClient {
                 if (command.equals("exit")) {
                     return;
                 } else {
-                    client.processRequest(command);
+                    System.out.println(client.processRequest(command));
                 }
                 System.out.print("> ");
             }

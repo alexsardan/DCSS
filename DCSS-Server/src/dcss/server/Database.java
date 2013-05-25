@@ -24,8 +24,8 @@ public class Database {
     
     public Database (int id) throws SQLException
     {
-        String url = "jdbc:mysql://localhost:3306/fileserver_" + id;
-        this.con = DriverManager.getConnection(url, "root", "student");  
+        String url = "jdbc:mysql://localhost/fileserver_" + id;
+        this.con = DriverManager.getConnection(url, "root", "root");  
     }    
     
     public boolean addUser(String name, String pass)

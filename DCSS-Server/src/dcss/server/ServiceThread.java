@@ -45,7 +45,7 @@ public abstract class ServiceThread extends Thread {
         this.globalThreadPool = globalThreadPool;
         this.requestQueue = new LinkedBlockingQueue<>();
         this.responseQueue = new LinkedBlockingQueue<>();
-        this.processor = new ProcessingModule(globalThreadPool, requestQueue, requestQueue, serverid);
+        this.processor = new ProcessingModule(globalThreadPool, requestQueue, responseQueue, serverid);
     }
 
     @Override

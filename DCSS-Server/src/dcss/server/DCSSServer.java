@@ -62,7 +62,7 @@ public class DCSSServer {
                             serverInstance.id = Integer.parseInt(parts[1]);
                             break;
                         case "ip":
-                            serverInstance.host = parts[2];
+                            serverInstance.host = parts[1];
                             break;
                         case "port":
                             serverInstance.port = Integer.parseInt(parts[1]);
@@ -80,6 +80,8 @@ public class DCSSServer {
                             break;
                         case "n":
                             sg.addToGroup(parts[1], Integer.parseInt(parts[2]));
+                            TCPServiceThread newConn = new TCPServiceThread(serverInstance.processingService, serverInstance.id, ((TCPServerGroup)sg).getLastSocket(), sg, false);
+                            newConn.start();
                             break;
                         default :
                             Logger.getLogger(DCSSServer.class.getName()).log(Level.WARNING, "Configuration parameter not supported: {0}", parts[1]);
@@ -99,7 +101,8 @@ public class DCSSServer {
                     int conn = 0;
                     while(conn < MAX_CONNECTIONS) {
                         Socket s = sock.accept();
-                        TCPServiceThread newConn = new TCPServiceThread(serverInstance.processingService, serverInstance.id, s, sg);
+                        Logger.getLogger(DCSSServer.class.getName()).log(Level.INFO, "Client connected");
+                        TCPServiceThread newConn = new TCPServiceThread(serverInstance.processingService, serverInstance.id, s, sg, true);
                         newConn.start();
                         conn++;
                     }

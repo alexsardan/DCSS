@@ -33,6 +33,7 @@ public class ServerSelector {
     }
 
     public ServerSelector() {
+        this.alternatives = new ArrayList<>();
         this.sockTry = 0;
     }
     

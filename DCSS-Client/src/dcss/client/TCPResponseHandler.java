@@ -34,7 +34,7 @@ public class TCPResponseHandler extends ResponseHandler {
         while (true) {
             try {
                 resp = (GenericResponse) this.is.readObject();
-                //TODO: process resp;
+                super.processResponse(resp);
             } catch (IOException ex) {
                 Logger.getLogger(TCPResponseHandler.class.getName()).log(Level.SEVERE, null, ex);
             } catch (ClassNotFoundException ex) {

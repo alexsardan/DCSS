@@ -115,7 +115,7 @@ class RequestHandler implements Runnable
             boolean answerCreateUser = new Database(this.idServer).addUser(lcro.userName, lcro.password);
             if ((answerCreateUser == true) && (lcro.type.equals("push_user") == false))
             {
-                ReplyMessage replyMessage = new ReplyMessage("create_user", "client", "ACK");
+                ReplyMessage replyMessage = new ReplyMessage("create", "client", "ACK");
                 this.responseQueue.add(replyMessage);
                 
                 ReplicaUserResponse replicaUserResponse = new ReplicaUserResponse("create", "server", lcro.userName, lcro.password);
@@ -123,7 +123,7 @@ class RequestHandler implements Runnable
             }
             else if (answerCreateUser == false)
             {
-                ReplyMessage replyMessage = new ReplyMessage("create_user", "client", "NACK");
+                ReplyMessage replyMessage = new ReplyMessage("create", "client", "NACK");
                 this.responseQueue.add(replyMessage);
             }
         } catch (SQLException ex) {

@@ -20,48 +20,59 @@ import my.generic.lib.GenericResponse;
  * @author Alex
  */
 public class TCPServiceThread extends ServiceThread {
-    
     private Socket cSock;
     
     public class TCPResponseManager extends ServiceThread.ResponseManager {
         Socket respSocket;
+        public ObjectOutputStream out;
+        boolean useOs;
         
-        public TCPResponseManager(LinkedBlockingQueue sendQueue, Socket sock, ServerGroup sg) {
+        public TCPResponseManager(LinkedBlockingQueue sendQueue, Socket sock, ServerGroup sg, boolean useOs) {
             super(sendQueue, sg);
             this.respSocket = sock;
+            this.useOs = useOs;
         }
 
         @Override
         public void run() {
+            Logger.getLogger(TCPServiceThread.class.getName()).log(Level.INFO, "Service thread started for client");
             try {
-                ObjectOutputStream out = new ObjectOutputStream(this.respSocket.getOutputStream());
+                if (this.useOs) {
+                    this.out = new ObjectOutputStream(this.respSocket.getOutputStream());
+                }
                 GenericResponse resp;
                 
                 while (true) {
                     try {
                         resp = this.sendQueue.take();
-                        if (resp.type.equals("server")) {
+                        if (resp.dest.equals("server")) {
                             this.sg.sendAll(resp);
-                        } else if (resp.type.equals("client")) {
-                            out.writeObject(resp);
+                        } else if (resp.dest.equals("client")) {
+                            this.out.writeObject(resp);
                         }
                     } catch (InterruptedException ex) {
                         Logger.getLogger(TCPServiceThread.class.getName()).log(Level.WARNING, "The response queue was interrupted");
                         continue;
                     }
-                    out.writeObject(resp);
                 }
             } catch (IOException ex) {
                 Logger.getLogger(TCPServiceThread.class.getName()).log(Level.SEVERE, null, ex);
+            } finally {
+                if (this.useOs)
+                    try {
+                    this.out.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(TCPServiceThread.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         }
      
     }
     
-    public TCPServiceThread(ExecutorService globalThreadPool, int serverid, Socket clientSock, ServerGroup sg) {
+    public TCPServiceThread(ExecutorService globalThreadPool, int serverid, Socket clientSock, ServerGroup sg, boolean useOs) {
         super(globalThreadPool, serverid);
         this.cSock = clientSock;
-        this.respManager = new TCPResponseManager(this.responseQueue, cSock, sg);
+        this.respManager = new TCPResponseManager(this.responseQueue, cSock, sg, useOs);
         this.serverGroup = sg;
     }
 
@@ -77,21 +88,26 @@ public class TCPServiceThread extends ServiceThread {
             while (true) {
                 try {
                     req = (GenericRequest) in.readObject();
-                    this.requestQueue.add(req);
+                    if (req.type.equals("new_server")) {
+                        Logger.getLogger(TCPServiceThread.class.getName()).log(Level.INFO, "This client is actually a server. Adding it to server group.");
+                        ((TCPServerGroup)this.serverGroup).addExistingStream(((TCPResponseManager) this.respManager).out);
+                    } else {
+                        this.requestQueue.add(req);
+                    }
                 } catch (ClassNotFoundException ex) {
                     Logger.getLogger(TCPServiceThread.class.getName()).log(Level.WARNING, null, "Malformed packet received. Skiping...");
                     continue;
                 }        
             }
         } catch (IOException ex) {
-            Logger.getLogger(TCPServiceThread.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        try {
-            this.processor.join();
-            this.respManager.join();
-        } catch (InterruptedException ex) {
-            Logger.getLogger(TCPServiceThread.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TCPServiceThread.class.getName()).log(Level.INFO, "Client exited");
+        } finally {        
+            try {
+                this.processor.join();
+                this.respManager.join();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(TCPServiceThread.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
     
