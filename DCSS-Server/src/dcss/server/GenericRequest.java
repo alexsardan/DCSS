@@ -4,19 +4,19 @@
  */
 package dcss.server;
 
+import java.io.Serializable;
+
 /**
  *
  * @author Alex
  */
-public class GenericRequest {
+public class GenericRequest implements Serializable {
     public String type;
     public int session_key;
-    public byte[] data;
 
-    public GenericRequest(String type, int session_key, byte[] data) {
+    public GenericRequest(String type, int session_key) {
         this.type = type;
         this.session_key = session_key;
-        this.data = data;
     }
     
 }
