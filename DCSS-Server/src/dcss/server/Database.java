@@ -164,5 +164,73 @@ public class Database {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
         return "";
-    }  
+    }
+    
+    public boolean insertUploadEntry(String path, long totalSize)
+    {
+        try 
+        {
+            this.st = this.con.prepareStatement("INSERT INTO active_uploads (FilePath, TotalSize) VALUES (?, ?);");
+            this.st.setString(1, path);
+            this.st.setLong(2, totalSize);
+            this.st.executeUpdate();
+            
+        } catch (Exception ex)
+        {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
+        return true;
+    }
+    
+    public boolean isUploadFinished (String path)
+    {        
+        try {
+            this.st = this.con.prepareStatement("SELECT * FROM active_Uploads WHERE FilePath=?;");            
+            this.st.setString(1, path);
+            this.rs = this.st.executeQuery();
+            
+            if (rs.next())
+            {
+                if(rs.getFloat("LocalSize") == rs.getFloat("TotalSize"))
+                    return true;
+            }
+            
+            return false;
+            
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }        
+    }
+    
+    public boolean updateUploadEntry(String path, float chunkSize)
+    {
+        try {
+            this.st = this.con.prepareStatement("UPDATE active_Uploads SET LocalSize = LocalSize + ? WHERE FilePath = ?;");
+            this.st.setFloat(1, chunkSize);
+            this.st.setString(2, path);
+            this.st.executeUpdate();
+            return true;
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }        
+        return false;
+    }
+    
+    public boolean deleteUploadEntry(String path)
+    {
+        try 
+        {
+            this.st = this.con.prepareStatement("DELETE FROM active_Uploads WHERE FilePath = ?;");
+            this.st.setString(1, path);
+            this.st.executeUpdate();
+            
+            return true;
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return false;
+    }
 }
