@@ -29,4 +29,16 @@ public class UploadFile implements Serializable
     {
         return id + " " + name +" " + ownerName + " " + privat + " " + path +" "+ dateAdded;
     }
+    
+    @Override
+    public boolean equals(Object other)
+    {
+        UploadFile cmp = (UploadFile)other;
+        if ((this.id == cmp.id) && (this.name.equals(cmp.name)) && (this.owner == cmp.owner) &&
+             (this.ownerName.equals(cmp.ownerName)) && (this.privat == cmp.privat) &&
+             (this.path.equals(cmp.path)) && (this.dateAdded.equals(cmp.dateAdded)))
+            return true;
+        
+        return false;
+    }
 }

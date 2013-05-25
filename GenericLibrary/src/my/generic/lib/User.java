@@ -10,5 +10,15 @@ public class User
     {
         this.name = name;
         this.password = password;
-    }    
+    }
+    
+    @Override
+    public boolean equals(Object other)
+    {
+        User cmp = (User)other;
+        if ((this.name.equals(cmp.name)) && (this.password.equals(cmp.password)))
+            return true;
+        
+        return false;
+    }
 }
