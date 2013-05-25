@@ -1,7 +1,4 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package dcss.server;
 
 import java.io.BufferedInputStream;
@@ -81,6 +78,9 @@ class RequestHandler implements Runnable
                     createUser(this.qenericRequest);
                     break;
                 case "exchange":
+                    exchangeDatabase(this.qenericRequest);
+                    break;
+                case "update":
                     exchangeDatabase(this.qenericRequest);
                     break;
             }
@@ -345,9 +345,33 @@ class RequestHandler implements Runnable
     
     public void exchangeDatabase(GenericRequest qenericRequest)
     {
-        ExchangeDatabase exchangeDatabase = (ExchangeDatabase)qenericRequest;
-        
-        
+        try {
+            ExchangeDatabase exchangeDatabase = (ExchangeDatabase)qenericRequest;
+            
+            Database db = new Database(this.idServer);
+            ArrayList<UploadFile> filesList = db.getFiles();
+            ArrayList<User> usersList = db.getUsers();
+            
+            if (exchangeDatabase.action.equals("exchange"))
+            {
+                ExchangeDatabase exData = new ExchangeDatabase("update", filesList, usersList);
+                this.responseQueue.add(exData);
+            }
+            
+            for(UploadFile file : exchangeDatabase.filesList)
+            {
+                if (filesList.indexOf(file) == -1)
+                    db.addFile(file.owner, file.name, file.privat, file.path);
+            }
+            
+            for(User user : exchangeDatabase.usersList)
+            {
+                if (usersList.indexOf(user) == -1)
+                    db.addUser(user.name, user.password);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }
 
