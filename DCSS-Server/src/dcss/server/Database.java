@@ -1,6 +1,5 @@
 package dcss.server;
 
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.sql.Connection;
@@ -14,35 +13,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import my.generic.lib.UploadFile;
 
-
-class UploadFile implements Serializable
-{
-    public int id;
-    public String name;
-    public int owner;
-    public String ownerName;
-    public int privat;
-    public String path;
-    public Date dateAdded;
-    
-    public UploadFile (int id, String name, int owner, int privat, String path, Date dateAdded, String ownerName)
-    {
-        this.id = id;
-        this.name = name;
-        this.owner = owner;
-        this.privat = privat;
-        this.path = path;
-        this.dateAdded = dateAdded;
-        this.ownerName = ownerName;
-    }
-    
-    @Override
-    public String toString()
-    {
-        return id + " " + name +" " + ownerName + " " + privat + " " + path +" "+ dateAdded;
-    }
-}
 
 public class Database {
     
