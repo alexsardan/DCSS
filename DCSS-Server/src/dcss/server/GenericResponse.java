@@ -4,13 +4,14 @@
  */
 package dcss.server;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  *
  * @author Alex
  */
-public class GenericResponse {
+public class GenericResponse implements Serializable{
     public String type;
     public String dest;
 
