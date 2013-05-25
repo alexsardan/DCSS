@@ -6,9 +6,11 @@ package dcss.server;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.RandomAccessFile;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -143,7 +145,49 @@ class RequestHandler implements Runnable
         
         String userHome = System.getProperty("user.home");
         DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd");
-        String fileName = createFileReqObj.fileName + "_" + createFileReqObj.session_key + "_" + dateFormat.format(new Date());
+        String filePathString = userHome + "/SERVER" + this.idServer + "/" + 
+                                createFileReqObj.accessType + "/" + createFileReqObj.fileName +
+                                "_" + createFileReqObj.session_key + "_" + dateFormat.format(new Date());
+        
+        File f = new File(filePathString);
+        if(f.exists() == false)
+        {
+            try {
+                boolean checkCreation = f.createNewFile();
+                if (checkCreation == true)
+                {
+                    RandomAccessFile raf = new RandomAccessFile(f, "rw");  
+                    try  
+                    {  
+                        raf.setLength(createFileReqObj.fileLength);  
+                    }  
+                    finally  
+                    {  
+                        raf.close();  
+                    }  
+                    
+                    ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", "ACK");
+                    this.responseQueue.add(replyMessage);
+                }
+                else
+                {
+                    ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", "NACK");
+                    this.responseQueue.add(replyMessage);
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        else
+        {
+            ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", "NACK");
+            this.responseQueue.add(replyMessage);
+        }
+    }
+    
+    public void uploadFile(GenericRequest qenericRequest)
+    {
+        
     }
 }
 
