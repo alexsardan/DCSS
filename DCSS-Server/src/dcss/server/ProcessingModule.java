@@ -56,7 +56,7 @@ class RequestHandler implements Runnable
                 case "login":
                     loginClient(this.qenericRequest);
                     break;
-                case "create_user":
+                case "create":
                     createUser(this.qenericRequest);
                     break;
                 case "list":
@@ -67,9 +67,6 @@ class RequestHandler implements Runnable
                     break;
                 case "upload":
                     uploadFile(this.qenericRequest);
-                    break;
-                case "download_first":
-                    downloadFile(this.qenericRequest);
                     break;
                 case "download":
                     downloadFile(this.qenericRequest);
@@ -97,12 +94,12 @@ class RequestHandler implements Runnable
             int idClient = new Database(this.idServer).logIn(lcro.userName, lcro.password);
             if (idClient != 0)
             {
-                ReplyMessage replyMessage = new ReplyMessage("login", "client", "ACK");
+                ReplyMessage replyMessage = new ReplyMessage("login", "client", idClient + "");
                 this.responseQueue.add(replyMessage);
             }
             else
             {
-                ReplyMessage replyMessage = new ReplyMessage("login", "client", "NACK");
+                ReplyMessage replyMessage = new ReplyMessage("login", "client", 0 + "");
                 this.responseQueue.add(replyMessage);
             }
         } catch (SQLException ex) {
@@ -116,12 +113,12 @@ class RequestHandler implements Runnable
             LoginCreateRequestObject lcro = (LoginCreateRequestObject)qenericRequest;
             
             boolean answerCreateUser = new Database(this.idServer).addUser(lcro.userName, lcro.password);
-            if (answerCreateUser == true)
+            if ((answerCreateUser == true) && (lcro.type.equals("push_user") == false))
             {
                 ReplyMessage replyMessage = new ReplyMessage("create_user", "client", "ACK");
                 this.responseQueue.add(replyMessage);
                 
-                ReplicaUserResponse replicaUserResponse = new ReplicaUserResponse("create_user", "server", lcro.userName, lcro.password);
+                ReplicaUserResponse replicaUserResponse = new ReplicaUserResponse("create", "server", lcro.userName, lcro.password);
                 this.responseQueue.add(replicaUserResponse);
             }
             else if (answerCreateUser == false)
@@ -178,8 +175,11 @@ class RequestHandler implements Runnable
                     Database db = new Database(this.idServer);
                     db.insertUploadEntry(filePathString, createFileReqObj.fileLength);
                     
-                    ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", filePathString);
-                    this.responseQueue.add(replyMessage);
+                    if (createFileReqObj.equals("push_data_first") == false)
+                    {
+                        ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", filePathString);
+                        this.responseQueue.add(replyMessage);
+                    }
                 }
                 else
                 {
@@ -226,41 +226,46 @@ class RequestHandler implements Runnable
                 int secondUnderscore = fileName.lastIndexOf("_", firstUnderscore - 1);
                 db.addFile(uploadFileReqObj.session_key, fileName.substring(0, secondUnderscore), permission, uploadFileReqObj.filePath);
                 
-                ReplyMessage replyMessage = new ReplyMessage("create_user", "client", "ACK");
-                this.responseQueue.add(replyMessage);
-
-                File f = new File(uploadFileReqObj.filePath);
-                CreateFileResponseObject createFileRespObj = new CreateFileResponseObject("push_data_first", "server",
-                                                                                          fileName, filePermission, f.length());
-                this.responseQueue.add(createFileRespObj);
-                            
-                FileInputStream fileInputStream = new FileInputStream(uploadFileReqObj.filePath);
-                BufferedInputStream bis = new BufferedInputStream(fileInputStream);
-
-                int nrChunks = (int) (f.length() / CHUNKSIZE);
-                int remainBytes = (int) (f.length() - nrChunks * CHUNKSIZE);
-
-                for (int i = 0 ; i < nrChunks ; i++)
+                if (uploadFileReqObj.type.equals("push_data") == false)
                 {
-                    byte[] data = new byte[CHUNKSIZE];
-                    bis.read(data, i * CHUNKSIZE, CHUNKSIZE);
+                    ReplyMessage replyMessage = new ReplyMessage("create_user", "client", "ACK");
+                    this.responseQueue.add(replyMessage);
 
-                    ReplicaUploadFileResponse replicaUploadFileResp = new ReplicaUploadFileResponse("push_data", "server", 
-                                                                                                    fileName, i * CHUNKSIZE, data);
-                    this.responseQueue.add(replicaUploadFileResp);
+                    File f = new File(uploadFileReqObj.filePath);
+                    ReplicaFileResponseObject createFileRespObj = new ReplicaFileResponseObject("push_data_first", "server",
+                                                                                              fileName, filePermission, f.length());
+                    this.responseQueue.add(createFileRespObj);
+
+                    FileInputStream fileInputStream = new FileInputStream(uploadFileReqObj.filePath);
+                    BufferedInputStream bis = new BufferedInputStream(fileInputStream);
+
+                    int nrChunks = (int) (f.length() / CHUNKSIZE);
+                    int remainBytes = (int) (f.length() - nrChunks * CHUNKSIZE);
+
+                    for (int i = 0 ; i < nrChunks ; i++)
+                    {
+                        byte[] data = new byte[CHUNKSIZE];
+                        bis.read(data, i * CHUNKSIZE, CHUNKSIZE);
+
+                        ReplicaUploadFileResponse replicaUploadFileResp = new ReplicaUploadFileResponse("push_data", "server", 
+                                                                                                        fileName, i * CHUNKSIZE,
+                                                                                                        CHUNKSIZE, data);
+                        this.responseQueue.add(replicaUploadFileResp);
+                    }
+
+                    if (remainBytes > 0)
+                    {
+                        byte[] data = new byte[remainBytes];
+                        bis.read(data, nrChunks * CHUNKSIZE, remainBytes);
+
+                        ReplicaUploadFileResponse replicaUploadFileResp = new ReplicaUploadFileResponse("push_data", "server", 
+                                                                                                        fileName, nrChunks * CHUNKSIZE,
+                                                                                                        remainBytes, data);
+                        this.responseQueue.add(replicaUploadFileResp);
+                    }
+
+                    bis.close();      
                 }
-
-                if (remainBytes > 0)
-                {
-                    byte[] data = new byte[remainBytes];
-                    bis.read(data, nrChunks * CHUNKSIZE, remainBytes);
-
-                    ReplicaUploadFileResponse replicaUploadFileResp = new ReplicaUploadFileResponse("push_data", "server", 
-                                                                                                    fileName, nrChunks * CHUNKSIZE, data);
-                    this.responseQueue.add(replicaUploadFileResp);
-                }
-
-                bis.close();      
             }
         } catch (SQLException ex) {
             Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
@@ -277,10 +282,72 @@ class RequestHandler implements Runnable
     
     public void downloadFile(GenericRequest qenericRequest)
     {
+        FileInputStream fileInputStream = null;
+        try {
+            DownloadFileRequestObject downloadFileReqObj = (DownloadFileRequestObject)qenericRequest;
+            
+            Database db = new Database(this.idServer);
+            String filePath = db.getPath(downloadFileReqObj.idFile,
+                                         downloadFileReqObj.fileName,
+                                         downloadFileReqObj.session_key);
+            if (filePath.equals(""))
+            {
+                ReplyMessage replyMessage = new ReplyMessage("create_user", "client", "NACK");
+                this.responseQueue.add(replyMessage);
+                return;
+            }
+            fileInputStream = new FileInputStream(filePath);
+            BufferedInputStream bis = new BufferedInputStream(fileInputStream);
+
+            File f = new File(filePath);
+            CreateFileRequestObject createFileReqObj = new CreateFileRequestObject("create_file",
+                                                       downloadFileReqObj.session_key, downloadFileReqObj.fileName,
+                                                       null, f.length());
+            this.responseQueue.add(createFileReqObj);
+            
+            int nrChunks = (int) (f.length() / CHUNKSIZE);
+            int remainBytes = (int) (f.length() - nrChunks * CHUNKSIZE);
+            for (int i = 0 ; i < nrChunks ; i++)
+            {
+                byte[] data = new byte[CHUNKSIZE];
+                bis.read(data, i * CHUNKSIZE, CHUNKSIZE);
+
+                DownloadFileResponseObject downloadFileRespObj = new DownloadFileResponseObject("download", "client", 
+                                                                                                downloadFileReqObj.fileName,
+                                                                                                i * CHUNKSIZE, CHUNKSIZE, data);
+                this.responseQueue.add(downloadFileRespObj);
+            }
+
+            if (remainBytes > 0)
+            {
+                byte[] data = new byte[remainBytes];
+                bis.read(data, nrChunks * CHUNKSIZE, remainBytes);
+
+                DownloadFileResponseObject downloadFileRespObj = new DownloadFileResponseObject("download", "client",
+                                                                                                downloadFileReqObj.fileName,
+                                                                                                nrChunks * CHUNKSIZE, CHUNKSIZE, data);
+                this.responseQueue.add(downloadFileRespObj);
+            }
+
+            bis.close();      
+        } catch (IOException ex) {
+            Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SQLException ex) {
+            Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                fileInputStream.close();
+            } catch (IOException ex) {
+                Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
     }
     
     public void exchangeDatabase(GenericRequest qenericRequest)
     {
+        ExchangeDatabase exchangeDatabase = (ExchangeDatabase)qenericRequest;
+        
+        
     }
 }
 

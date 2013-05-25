@@ -1,14 +1,14 @@
 
 package my.generic.lib;
 
-public class ReplicaUploadFileResponse extends GenericResponse
+public class DownloadFileResponseObject extends GenericResponse
 {
     public String fileName;
     public int offsetChunk;
     public long lengthChunk;
     public byte[] chunk;
     
-    public ReplicaUploadFileResponse(String type, 
+    public DownloadFileResponseObject(String type, 
                                    String dest,
                                    String fileName,
                                    int offset,
