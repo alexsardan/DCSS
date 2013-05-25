@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package dcss.client;
 
 import java.io.BufferedReader;
@@ -13,13 +9,18 @@ import java.util.logging.Logger;
 
 import my.generic.lib.*;
 
-/**
- *
- * @author Alex
- */
 public class DCSSClient {
+    
+    private int id;
+    public boolean logedIn;
+    
+    public DCSSClient(int id)
+    {
+        this.id = id;
+        this.logedIn = false;
+    }
 
-    public static String processRequest(String req)
+    public String processRequest(String req)
     {
         StringTokenizer st = new StringTokenizer(req);
         
@@ -36,6 +37,8 @@ public class DCSSClient {
                     String name = st.nextToken();
                     String pass = st.nextToken();
                     
+                    LoginCreateRequestObject lcro = new LoginCreateRequestObject("login", this.id, name, pass);
+                                        
                     break;
                 }
                 else
@@ -46,6 +49,8 @@ public class DCSSClient {
                     String name = st.nextToken();
                     String pass = st.nextToken();
                     
+                    LoginCreateRequestObject lcro = new LoginCreateRequestObject("create_user", this.id, name, pass);
+                    
                     break;
                 }
                 return "Apel incorect! \n login [nume] [parola] \n";
@@ -54,27 +59,30 @@ public class DCSSClient {
                 if (st.countTokens() > 0)
                     return "Comanda 'list' nu necesita parametri suplimentari";
                 else
-                    ;                    
+                {
+                    ListFilesRequestObject list = new ListFilesRequestObject("list", this.id);
+                }                   
                 break;
             case "download":
                 if (st.countTokens() == 2)
                 {
                     try
                     {
-                        int id = Integer.parseInt(st.nextToken());
+                        int idFile = Integer.parseInt(st.nextToken());
+                        String name = st.nextToken();
+                       /*TODO*/
+                        
                     } catch(NumberFormatException ex)
                     {
                         return "Parametrul [id_fisier] in format incorect";
                     }
-                    
-                    String name = st.nextToken();
                     break;
                 }
                 
             case "upload":
                 if (st.countTokens() == 3)
                 {
-                    
+                    /*TODO*/
                 }
                 break;
             default:
@@ -83,22 +91,23 @@ public class DCSSClient {
         
         return "";
     }
-    /**
-     * @param args the command line arguments
-     */
+    
     public static void main(String[] args) 
     {
+        DCSSClient client = new DCSSClient(1);
         try {
             BufferedReader console = new BufferedReader(new InputStreamReader(System.in));
             String command;
-            //
+            
             System.out.print("> ");
             while ((command = console.readLine()) != null) 
             {
                 if (command.equals("exit")) {
                     return;
                 } else {
-                   System.out.println(processRequest(command));
+                  /* this.id = 1;
+                   
+                   System.out.println(processRequest(command));*/
                 }
                 System.out.print("> ");
             }
