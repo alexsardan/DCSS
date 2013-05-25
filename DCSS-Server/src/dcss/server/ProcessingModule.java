@@ -10,6 +10,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
@@ -76,89 +80,78 @@ class RequestHandler implements Runnable
     
     public void loginClient(GenericRequest qenericRequest)
     {
-        ObjectInputStream objectInputStream = null;
+        LoginCreateRequestObject lcro = (LoginCreateRequestObject)qenericRequest;
+        
         try {
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(qenericRequest.data);
-            objectInputStream = new ObjectInputStream(byteArrayInputStream);
-            LoginCreateRequestObject lcro = (LoginCreateRequestObject)objectInputStream.readObject();
-            
-            int idClient = new Database(this.idServer).logIn(lcro.name, lcro.password);
+            int idClient = new Database(this.idServer).logIn(lcro.userName, lcro.password);
             if (idClient != 0)
             {
-                GenericResponse genericResponse = new GenericResponse("login", "client", new String("ACK").getBytes());
-                this.responseQueue.add(genericResponse);
+                ReplyMessage replyMessage = new ReplyMessage("login", "client", "ACK");
+                this.responseQueue.add(replyMessage);
             }
             else
             {
-                GenericResponse genericResponse = new GenericResponse("login", "client", new String("NACK").getBytes());
-                responseQueue.add(genericResponse);
+                ReplyMessage replyMessage = new ReplyMessage("login", "client", "NACK");
+                this.responseQueue.add(replyMessage);
             }
         } catch (SQLException ex) {
             Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            try {
-                objectInputStream.close();
-            } catch (IOException ex) {
-                Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-            }
         }
     }
     
     public void createUser(GenericRequest qenericRequest)
     {
-        ObjectInputStream objectInputStream = null;
         try {
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(qenericRequest.data);
-            objectInputStream = new ObjectInputStream(byteArrayInputStream);
-            LoginCreateRequestObject lcro = (LoginCreateRequestObject)objectInputStream.readObject();
+            LoginCreateRequestObject lcro = (LoginCreateRequestObject)qenericRequest;
             
-            boolean answerCreateUser = new Database(this.idServer).addUser(lcro.name, lcro.password);
+            boolean answerCreateUser = new Database(this.idServer).addUser(lcro.userName, lcro.password);
             if (answerCreateUser == true)
             {
-                GenericResponse genericResponse = new GenericResponse("create_user", "client", new String("ACK").getBytes());
-                this.responseQueue.add(genericResponse);
+                ReplyMessage replyMessage = new ReplyMessage("create_user", "client", "ACK");
+                this.responseQueue.add(replyMessage);
                 
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-                objectOutputStream.writeObject(lcro);
-                genericResponse = new GenericResponse("create_user", "server", byteArrayOutputStream.toByteArray());
-                this.responseQueue.add(genericResponse);
+                ReplicaUserResponse replicaUserResponse = new ReplicaUserResponse("create_user", "server", lcro.userName, lcro.password);
+                this.responseQueue.add(replicaUserResponse);
             }
             else if (answerCreateUser == false)
             {
-                GenericResponse genericResponse = new GenericResponse("create_user", "client", new String("NACK").getBytes());
-                this.responseQueue.add(genericResponse);
+                ReplyMessage replyMessage = new ReplyMessage("create_user", "client", "NACK");
+                this.responseQueue.add(replyMessage);
             }
         } catch (SQLException ex) {
             Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            try {
-                objectInputStream.close();
-            } catch (IOException ex) {
-                Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-            }
         }
     }
     
     public void listFiles(GenericRequest qenericRequest)
     {
+        try {
+            ListFilesRequestObject listFileReqObj = (ListFilesRequestObject)qenericRequest;
+            
+            ArrayList<UploadFile> files = new Database(this.idServer).browseFiles(listFileReqObj.session_key); 
+            
+            ListFilesResponseObject listFilesRespObj = new ListFilesResponseObject("list", "client", files);
+            this.responseQueue.add(listFilesRespObj);
+        } catch (SQLException ex) {
+            Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void createFile(GenericRequest qenericRequest)
+    {
+        CreateFileRequestObject createFileReqObj = (CreateFileRequestObject)qenericRequest;
         
+        String userHome = System.getProperty("user.home");
+        DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd");
+        String fileName = createFileReqObj.fileName + "_" + createFileReqObj.session_key + "_" + dateFormat.format(new Date());
     }
 }
 
 public class ProcessingModule extends Thread
 {
     ExecutorService processingService;
-    LinkedBlockingQueue requestQueue;
-    LinkedBlockingQueue responseQueue;
+    LinkedBlockingQueue<GenericRequest> requestQueue;
+    LinkedBlockingQueue<GenericResponse> responseQueue;
     int idServer = 0;
     
     public ProcessingModule(ExecutorService ps, 

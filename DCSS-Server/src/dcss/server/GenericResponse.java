@@ -4,6 +4,8 @@
  */
 package dcss.server;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author Alex
@@ -11,12 +13,44 @@ package dcss.server;
 public class GenericResponse {
     public String type;
     public String dest;
-    public byte[] data;
 
-        public GenericResponse(String type, String dest, byte[] data) {
+    public GenericResponse(String type, String dest) {
         this.type = type;
         this.dest = dest;
-        this.data = data;
     }
+}
+
+class ReplyMessage extends GenericResponse
+{
+    public String answer;
     
+    public ReplyMessage(String type, String dest, String answer)
+    {
+        super(type, dest);
+        this.answer = answer;
+    }
+}
+
+class ReplicaUserResponse extends GenericResponse
+{
+    public String userName;
+    public String password;
+    
+    public ReplicaUserResponse(String type, String dest, String name, String passwd)
+    {
+        super(type, dest);
+        this.userName = name;
+        this.password = passwd;
+    }
+}
+
+class ListFilesResponseObject extends GenericResponse
+{
+    ArrayList<UploadFile> files;
+    
+    public ListFilesResponseObject(String type, String dest, ArrayList<UploadFile> files)
+    {
+        super(type, dest);
+        this.files = files;
+    }
 }
