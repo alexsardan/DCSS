@@ -20,9 +20,11 @@ public abstract class ServiceThread extends Thread {
     public class ResponseManager extends Thread {
         
         LinkedBlockingQueue<GenericResponse> sendQueue;
+        ServerGroup sg;
         
-        public ResponseManager(LinkedBlockingQueue sendQueue) {
+        public ResponseManager(LinkedBlockingQueue sendQueue, ServerGroup sg) {
             this.sendQueue = sendQueue;
+            this.sg = sg;
         }
 
         @Override
@@ -37,6 +39,7 @@ public abstract class ServiceThread extends Thread {
     LinkedBlockingQueue<GenericResponse> responseQueue;
     ProcessingModule processor;
     ResponseManager respManager;
+    ServerGroup serverGroup;
     
     public ServiceThread(ExecutorService globalThreadPool, int serverid) {
         this.globalThreadPool = globalThreadPool;
