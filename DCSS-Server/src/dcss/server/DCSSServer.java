@@ -24,7 +24,7 @@ public class DCSSServer {
     public static final int PMODULE_SIZE = 16;
     public static final int MAX_CONNECTIONS = 32;
     
-    ExecutorService processingService;   
+    ExecutorService processingService;
     public int id;
     public String host;
     public int port;
@@ -85,6 +85,7 @@ public class DCSSServer {
                             Logger.getLogger(DCSSServer.class.getName()).log(Level.WARNING, "Configuration parameter not supported: {0}", parts[1]);
                             break;
                     }
+                    cfgLine = cfgIn.readLine();
                 }
             } catch (IOException ex) {
                 Logger.getLogger(DCSSServer.class.getName()).log(Level.SEVERE, null, ex);
