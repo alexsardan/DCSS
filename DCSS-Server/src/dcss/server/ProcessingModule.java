@@ -219,10 +219,10 @@ class RequestHandler implements Runnable
             
             fileOutputStream = new FileOutputStream(uploadFileReqObj.filePath);
             BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream);
-            bos.write(uploadFileReqObj.chunk, uploadFileReqObj.offsetChunk, uploadFileReqObj.chunk.length);
+            bos.write(uploadFileReqObj.chunk, uploadFileReqObj.offsetChunk, uploadFileReqObj.chunkLength);
             bos.close();
             
-            db.updateUploadEntry(uploadFileReqObj.filePath, uploadFileReqObj.chunk.length);
+            db.updateUploadEntry(uploadFileReqObj.filePath, uploadFileReqObj.chunkLength);
             if (db.isUploadFinished(uploadFileReqObj.filePath) == true)
             {
                 db.deleteUploadEntry(uploadFileReqObj.filePath);
