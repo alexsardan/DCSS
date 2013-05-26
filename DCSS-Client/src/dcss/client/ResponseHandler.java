@@ -33,7 +33,7 @@ public abstract class ResponseHandler extends Thread {
         @Override
         public void run() {
             try {
-                String tmp = filename.substring(filename.lastIndexOf("/"));
+                String tmp = filename.substring(filename.lastIndexOf("/")+1);
                 String fn = tmp.substring(0, tmp.lastIndexOf("_"));
                 String fnn = fn.substring(0, fn.lastIndexOf("_"));
                 BufferedInputStream buf = new BufferedInputStream(new FileInputStream(fnn));
@@ -42,7 +42,7 @@ public abstract class ResponseHandler extends Thread {
                 int bytesRead = 0;
                 try {
                     while ((bytesRead = buf.read(buffer)) != -1) {
-                        UploadFileRequestObject upf = new UploadFileRequestObject("upload", this.cl.sessionKey, this.filename, off, buffer, cl.lastLoginName);
+                        UploadFileRequestObject upf = new UploadFileRequestObject("upload", this.cl.sessionKey, this.filename, off, buffer, cl.lastLoginName,bytesRead);
                         off += bytesRead;
                         this.cl.serverRequest.sendRequest(upf);
                     }

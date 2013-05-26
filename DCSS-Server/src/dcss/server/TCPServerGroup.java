@@ -47,7 +47,7 @@ public class TCPServerGroup extends ServerGroup {
                         req = new CreateFileRequestObject("push_data_first", 0, ((ReplicaFileResponseObject)resp).fileName, ((ReplicaFileResponseObject)resp).accessType, ((ReplicaFileResponseObject)resp).fileLength, ((ReplicaFileResponseObject)resp).owner);
                         break;
                     case "push_data":
-                        req = new UploadFileRequestObject("push_data", 0, ((ReplicaUploadFileResponse)resp).fileName, ((ReplicaUploadFileResponse)resp).offsetChunk, ((ReplicaUploadFileResponse)resp).chunk, ((ReplicaUploadFileResponse)resp).owner);
+                        req = new UploadFileRequestObject("push_data", 0, ((ReplicaUploadFileResponse)resp).fileName, ((ReplicaUploadFileResponse)resp).offsetChunk, ((ReplicaUploadFileResponse)resp).chunk, ((ReplicaUploadFileResponse)resp).owner, (int)((ReplicaUploadFileResponse)resp).lengthChunk);
                         break;
                 }
                 if (req != null) {
