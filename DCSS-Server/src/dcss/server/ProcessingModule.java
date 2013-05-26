@@ -18,6 +18,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.io.Writer;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -165,6 +167,9 @@ class RequestHandler implements Runnable
                                     "_" + (session_key + "") + "_" + dateFormat.format(new Date());
             
             File f = new File(filePathString);
+            File folder = new File(filePathString.substring(0, filePathString.lastIndexOf("/")));
+            if (folder.exists() == false)
+                folder.mkdirs();
             if(f.exists() == false)
             {
                 try {
@@ -219,9 +224,11 @@ class RequestHandler implements Runnable
             
             Database db = new Database(this.idServer);
             
-           raf = new RandomAccessFile(uploadFileReqObj.filePath, "w");
-           raf.write(uploadFileReqObj.chunk, uploadFileReqObj.offsetChunk, uploadFileReqObj.chunkLength);
-           raf.close();
+            raf = new RandomAccessFile(uploadFileReqObj.filePath, "rw");
+           //raf.seek((long)uploadFileReqObj.offsetChunk);
+            raf.write(uploadFileReqObj.chunk, uploadFileReqObj.offsetChunk, uploadFileReqObj.chunkLength);
+            raf.seek(0);
+            raf.close();
             
             db.updateUploadEntry(uploadFileReqObj.filePath, uploadFileReqObj.chunkLength);
             if (db.isUploadFinished(uploadFileReqObj.filePath) == true)
