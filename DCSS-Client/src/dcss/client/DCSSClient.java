@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.channels.SocketChannel;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -132,6 +134,15 @@ public class DCSSClient {
                                 Socket sock = new Socket(client.serverSelector.getHost(), client.serverSelector.getPort());
                                 client.serverRequest = new TCPRequestHandler(sock);
                                 client.serverResponse = new TCPResponseHandler(client, sock);
+                                break;
+                            case "NIO":
+                                client.serverSelector.selectServer();
+                                SocketChannel sc = SocketChannel.open();
+                                sc.configureBlocking(false);
+                                sc.connect(new InetSocketAddress(client.serverSelector.getHost(), client.serverSelector.getPort()));
+                                while (!sc.finishConnect());
+                                client.serverRequest = new NIORequestHandler(sc);
+                                client.serverResponse = new NIOResponseHandler(client, sc);
                                 break;
                             default :
                                 Logger.getLogger(DCSSClient.class.getName()).log(Level.SEVERE, "This type of connection is not supported: {0}", parts[1]);

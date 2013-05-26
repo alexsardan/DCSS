@@ -70,7 +70,7 @@ public class TCPServiceThread extends ServiceThread {
     }
     
     public TCPServiceThread(ExecutorService globalThreadPool, int serverid, Socket clientSock, ServerGroup sg, boolean useOs) {
-        super(globalThreadPool, serverid);
+        super(globalThreadPool, serverid, true);
         this.cSock = clientSock;
         this.respManager = new TCPResponseManager(this.responseQueue, cSock, sg, useOs);
         this.serverGroup = sg;

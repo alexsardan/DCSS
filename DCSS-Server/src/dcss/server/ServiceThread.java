@@ -40,12 +40,16 @@ public abstract class ServiceThread extends Thread {
     ProcessingModule processor;
     ResponseManager respManager;
     ServerGroup serverGroup;
+    public int serverid;
     
-    public ServiceThread(ExecutorService globalThreadPool, int serverid) {
+    public ServiceThread(ExecutorService globalThreadPool, int serverid, boolean init) {
         this.globalThreadPool = globalThreadPool;
-        this.requestQueue = new LinkedBlockingQueue<>();
-        this.responseQueue = new LinkedBlockingQueue<>();
-        this.processor = new ProcessingModule(globalThreadPool, requestQueue, responseQueue, serverid);
+        if (init) {
+            this.requestQueue = new LinkedBlockingQueue<>();
+            this.responseQueue = new LinkedBlockingQueue<>();
+            this.processor = new ProcessingModule(globalThreadPool, requestQueue, responseQueue, serverid);
+        }
+        this.serverid = serverid;
     }
 
     @Override
