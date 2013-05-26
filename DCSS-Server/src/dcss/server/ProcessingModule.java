@@ -228,7 +228,7 @@ class RequestHandler implements Runnable
                 db.deleteUploadEntry(uploadFileReqObj.filePath);
                 
                 int indexFileNameBegin = uploadFileReqObj.filePath.lastIndexOf("/");
-                String fileName = uploadFileReqObj.filePath.substring(indexFileNameBegin);
+                String fileName = uploadFileReqObj.filePath.substring(indexFileNameBegin + 1);
                 int indexFilePermissionBegin = uploadFileReqObj.filePath.lastIndexOf("/", indexFileNameBegin - 1);
                 String filePermission = uploadFileReqObj.filePath.substring(indexFilePermissionBegin, indexFileNameBegin);
                 int permission = filePermission.equals("private") ? 1 : 0;
