@@ -3,12 +3,14 @@ package dcss.server;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -211,16 +213,15 @@ class RequestHandler implements Runnable
     
     public void uploadFile(GenericRequest qenericRequest)
     {
-        FileOutputStream  fileOutputStream = null;
+        RandomAccessFile raf = null;
         try {
             UploadFileRequestObject uploadFileReqObj = (UploadFileRequestObject)qenericRequest;
             
             Database db = new Database(this.idServer);
             
-            fileOutputStream = new FileOutputStream(uploadFileReqObj.filePath);
-            BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream);
-            bos.write(uploadFileReqObj.chunk, uploadFileReqObj.offsetChunk, uploadFileReqObj.chunkLength);
-            bos.close();
+           raf = new RandomAccessFile(uploadFileReqObj.filePath, "w");
+           raf.write(uploadFileReqObj.chunk, uploadFileReqObj.offsetChunk, uploadFileReqObj.chunkLength);
+           raf.close();
             
             db.updateUploadEntry(uploadFileReqObj.filePath, uploadFileReqObj.chunkLength);
             if (db.isUploadFinished(uploadFileReqObj.filePath) == true)
@@ -289,12 +290,6 @@ class RequestHandler implements Runnable
             Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            try {
-                fileOutputStream.close();
-            } catch (IOException ex) {
-                Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-            }
         }
     }
     
