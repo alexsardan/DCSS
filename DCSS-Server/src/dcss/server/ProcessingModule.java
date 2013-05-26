@@ -188,6 +188,7 @@ class RequestHandler implements Runnable
                         
                         Database db = new Database(this.idServer);
                         db.insertUploadEntry(filePathString, createFileReqObj.fileLength);
+                        db.con.close();
                         
                         if (createFileReqObj.equals("push_data_first") == false)
                         {
@@ -225,9 +226,9 @@ class RequestHandler implements Runnable
             Database db = new Database(this.idServer);
             
             raf = new RandomAccessFile(uploadFileReqObj.filePath, "rw");
-           //raf.seek((long)uploadFileReqObj.offsetChunk);
-            raf.write(uploadFileReqObj.chunk, uploadFileReqObj.offsetChunk, uploadFileReqObj.chunkLength);
             raf.seek(0);
+            raf.seek(uploadFileReqObj.offsetChunk);
+            raf.write(uploadFileReqObj.chunk);
             raf.close();
             
             db.updateUploadEntry(uploadFileReqObj.filePath, uploadFileReqObj.chunkLength);
@@ -290,9 +291,12 @@ class RequestHandler implements Runnable
                         this.responseQueue.add(replicaUploadFileResp);
                     }
 
-                    bis.close();      
+                    bis.close();  
+                    fileInputStream.close();
                 }
             }
+            
+            db.con.close();
         } catch (SQLException ex) {
             Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
@@ -349,7 +353,8 @@ class RequestHandler implements Runnable
                 this.responseQueue.add(downloadFileRespObj);
             }
 
-            bis.close();      
+            bis.close();    
+            db.con.close();
         } catch (IOException ex) {
             Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
         } catch (SQLException ex) {
@@ -389,6 +394,8 @@ class RequestHandler implements Runnable
                 if (usersList.indexOf(user) == -1)
                     db.addUser(user.name, user.password);
             }
+            
+            db.con.close();
         } catch (SQLException ex) {
             Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
         }

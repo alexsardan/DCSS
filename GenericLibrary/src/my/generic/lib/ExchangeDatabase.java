@@ -16,7 +16,7 @@ public class ExchangeDatabase extends GenericRequest
         super(null, 0);
         
         this.action = action;
-        this.filesList = files;
-        this.usersList = users;
+        this.filesList = new ArrayList<UploadFile>(files);
+        this.usersList = new ArrayList<User>(users);
     }
 }

@@ -19,7 +19,8 @@ public class UploadFileRequestObject extends GenericRequest
         super(type, session_key);
         this.filePath = filePath;
         this.offsetChunk = offset;
-        this.chunk = data;
+        this.chunk = new byte[chunkLength];
+        System.arraycopy(data, 0, chunk, 0, chunkLength);
         this.owner = owner;
         this.chunkLength = chunkLength;
     }

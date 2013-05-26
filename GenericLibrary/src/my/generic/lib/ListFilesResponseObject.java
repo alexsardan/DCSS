@@ -9,6 +9,6 @@ public class ListFilesResponseObject extends GenericResponse
     public ListFilesResponseObject(String type, String dest, ArrayList<UploadFile> files)
     {
         super(type, dest);
-        this.files = files;
+        this.files = new ArrayList<UploadFile>(files);
     }
 }

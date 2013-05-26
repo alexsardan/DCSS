@@ -19,6 +19,7 @@ public class DownloadFileResponseObject extends GenericResponse
         this.fileName = fileName;
         this.offsetChunk = offset;
         this.lengthChunk = length;
-        this.chunk = data;
+        this.chunk = new byte[(int)length];
+        System.arraycopy(data, 0, chunk, 0, (int)length);
     }
 }
