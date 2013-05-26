@@ -37,9 +37,9 @@ public class TCPServiceThread extends ServiceThread {
         public void run() {
             Logger.getLogger(TCPServiceThread.class.getName()).log(Level.INFO, "Service thread started for client");
             try {
-                if (this.useOs) {
+                //if (this.useOs) {
                     this.out = new ObjectOutputStream(this.respSocket.getOutputStream());
-                }
+                //}
                 GenericResponse resp;
                 
                 while (true) {
@@ -57,14 +57,14 @@ public class TCPServiceThread extends ServiceThread {
                 }
             } catch (IOException ex) {
                 Logger.getLogger(TCPServiceThread.class.getName()).log(Level.SEVERE, null, ex);
-            } finally {
-                if (this.useOs)
-                    try {
+            } 
+                //if (this.useOs)
+                try {
                     this.out.close();
                 } catch (IOException ex) {
                     Logger.getLogger(TCPServiceThread.class.getName()).log(Level.SEVERE, null, ex);
                 }
-            }
+            
         }
      
     }

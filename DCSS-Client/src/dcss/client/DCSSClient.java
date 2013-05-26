@@ -1,6 +1,7 @@
 package dcss.client;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.net.Socket;
@@ -14,11 +15,13 @@ public class DCSSClient {
     
     private int id;
     public boolean logedIn;
+    public int sessionKey;
     public int port;
     public String type;
     public RequestHandler serverRequest;
     public ServerSelector serverSelector;
     public ResponseHandler serverResponse;
+    public String lastLoginName;
     
     public DCSSClient(int id)
     {
@@ -54,9 +57,11 @@ public class DCSSClient {
                 if (st.countTokens() == 2)
                 {
                     String name = st.nextToken();
+                    this.lastLoginName = name;
                     String pass = st.nextToken();
                     
                     LoginCreateRequestObject lcro = new LoginCreateRequestObject("login", this.id, name, pass);
+                    this.serverRequest.sendRequest(lcro);
                     
                     break;
                 }
@@ -65,9 +70,9 @@ public class DCSSClient {
             case "list":
                 if (st.countTokens() > 0)
                     return "Comanda 'list' nu necesita parametri suplimentari";
-                else
-                {
+                else {
                     ListFilesRequestObject list = new ListFilesRequestObject("list", this.id);
+                    this.serverRequest.sendRequest(list);
                 }                   
                 break;
             case "download":
@@ -77,7 +82,8 @@ public class DCSSClient {
                     {
                         int idFile = Integer.parseInt(st.nextToken());
                         String name = st.nextToken();
-                       /*TODO*/
+                        DownloadFileRequestObject dfro = new DownloadFileRequestObject("download", this.sessionKey, idFile, name);
+                        this.serverRequest.sendRequest(dfro);
                         
                     } catch(NumberFormatException ex)
                     {
@@ -87,9 +93,14 @@ public class DCSSClient {
                 }
                 
             case "upload":
-                if (st.countTokens() == 3)
-                {
-                    /*TODO*/
+                if (st.countTokens() == 3) {
+                    String filename = st.nextToken();
+                    String access = st.nextToken();
+                    if ((!access.equals("public")) || (!access.equals("private")))
+                        return "Access modifiers should be 'public' or 'private'";
+                    File f = new File(filename);
+                    CreateFileRequestObject newFileCreateReq = new CreateFileRequestObject("upload_first", this.sessionKey, filename, access, f.length(), this.lastLoginName);
+                    this.serverRequest.sendRequest(newFileCreateReq);
                 }
                 break;
             default:
@@ -120,7 +131,7 @@ public class DCSSClient {
                                 client.serverSelector.selectServer();
                                 Socket sock = new Socket(client.serverSelector.getHost(), client.serverSelector.getPort());
                                 client.serverRequest = new TCPRequestHandler(sock);
-                                client.serverResponse = new TCPResponseHandler(sock);
+                                client.serverResponse = new TCPResponseHandler(client, sock);
                                 break;
                             default :
                                 Logger.getLogger(DCSSClient.class.getName()).log(Level.SEVERE, "This type of connection is not supported: {0}", parts[1]);

@@ -11,8 +11,14 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import my.generic.lib.CreateFileRequestObject;
 import my.generic.lib.GenericRequest;
 import my.generic.lib.GenericResponse;
+import my.generic.lib.LoginCreateRequestObject;
+import my.generic.lib.ReplicaFileResponseObject;
+import my.generic.lib.ReplicaUploadFileResponse;
+import my.generic.lib.ReplicaUserResponse;
+import my.generic.lib.UploadFileRequestObject;
 
 /**
  *
@@ -32,7 +38,21 @@ public class TCPServerGroup extends ServerGroup {
     public synchronized void sendAll(GenericResponse resp) {
         for (ObjectOutputStream o : this.servers) {
             try {
-                o.writeObject(resp);
+                GenericRequest req = null;
+                switch (resp.type) {
+                    case "create":
+                        req = new LoginCreateRequestObject("push_user", 0, ((ReplicaUserResponse)resp).userName, ((ReplicaUserResponse)resp).password);
+                        break;
+                    case "push_data_first":
+                        req = new CreateFileRequestObject("push_data_first", 0, ((ReplicaFileResponseObject)resp).fileName, ((ReplicaFileResponseObject)resp).accessType, ((ReplicaFileResponseObject)resp).fileLength, ((ReplicaFileResponseObject)resp).owner);
+                        break;
+                    case "push_data":
+                        req = new UploadFileRequestObject("push_data", 0, ((ReplicaUploadFileResponse)resp).fileName, ((ReplicaUploadFileResponse)resp).offsetChunk, ((ReplicaUploadFileResponse)resp).chunk, ((ReplicaUploadFileResponse)resp).owner);
+                        break;
+                }
+                if (req != null) {
+                    o.writeObject(req);
+                }
             } catch (IOException ex) {
                 Logger.getLogger(TCPServerGroup.class.getName()).log(Level.WARNING, "Cannot write response to server");
             }

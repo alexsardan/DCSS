@@ -19,7 +19,8 @@ public class TCPResponseHandler extends ResponseHandler {
     private Socket sock;
     private ObjectInputStream is;
 
-    public TCPResponseHandler(Socket sock) {
+    public TCPResponseHandler(DCSSClient client, Socket sock) {
+        super(client);
         this.sock = sock;
         try {
             is = new ObjectInputStream(this.sock.getInputStream());
