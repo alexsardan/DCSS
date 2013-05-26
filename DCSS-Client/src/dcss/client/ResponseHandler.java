@@ -114,14 +114,31 @@ public abstract class ResponseHandler extends Thread {
                 DownloadFileResponseObject fragment = (DownloadFileResponseObject)req;
                 try {
                     RandomAccessFile raf = null;
-                    raf = new RandomAccessFile(System.getProperty("user.home")+"/CLIENT_" + client.sessionKey +"/"+fragment.fileName, "rw");
+                    
+                    String path = System.getProperty("user.home")+"/CLIENT_" + client.sessionKey +"/"+fragment.fileName;
+                    File f = new File(path);
+                    if (f.exists() == false)
+                    {
+                        boolean checkCreation = f.createNewFile();
+                        if (checkCreation == true)
+                        {
+                            RandomAccessFile rf = new RandomAccessFile(f, "rw");
+                            try  
+                            {  
+                                rf.setLength(fragment.fileLength);  
+                            }  
+                            finally  
+                            {  
+                                rf.close();  
+                            }  
+                        }
+                    }
+                    
+                    raf = new RandomAccessFile(path, "rw");
                     raf.seek(0);
                     raf.seek(fragment.offsetChunk);
                     raf.write(fragment.chunk);
                     raf.close();
-                    /*BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fragment.fileName));
-                    out.write(fragment.chunk, fragment.offsetChunk, fragment.chunk.length);
-                    out.close();*/
                 } catch (FileNotFoundException ex) {
                     Logger.getLogger(DCSSClient.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (IOException ex) {

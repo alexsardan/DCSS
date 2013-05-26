@@ -328,42 +328,42 @@ class RequestHandler implements Runnable
                 this.responseQueue.add(replyMessage);
                 return;
             }
-            
-            fileInputStream = new FileInputStream(filePath);
-            BufferedInputStream bis = new BufferedInputStream(fileInputStream);
 
             File f = new File(filePath);
-            /*CreateFileRequestObject createFileReqObj = new CreateFileRequestObject("create_file",
-                                                       downloadFileReqObj.session_key, downloadFileReqObj.fileName,
-                                                       null, f.length(), db.getNameAfterID(downloadFileReqObj.session_key));*/
-            CreateFileResponseObject fileRespObj = new CreateFileResponseObject("create_file", "client", downloadFileReqObj.fileName, "", f.length());
-            this.responseQueue.add(fileRespObj);
-            
+                    
             int nrChunks = (int) (f.length() / CHUNKSIZE);
             int remainBytes = (int) (f.length() - nrChunks * CHUNKSIZE);
+
             for (int i = 0 ; i < nrChunks ; i++)
             {
+                RandomAccessFile rf = new RandomAccessFile(filePath, "r");
+                rf.seek(0);
+                rf.seek(i * CHUNKSIZE);
                 byte[] data = new byte[CHUNKSIZE];
-                bis.read(data, i * CHUNKSIZE, CHUNKSIZE);
+                rf.read(data);
+                rf.close();
 
                 DownloadFileResponseObject downloadFileRespObj = new DownloadFileResponseObject("download", "client", 
                                                                                                 downloadFileReqObj.fileName,
-                                                                                                i * CHUNKSIZE, CHUNKSIZE, data);
+                                                                                                i * CHUNKSIZE, CHUNKSIZE, data, f.length());
                 this.responseQueue.add(downloadFileRespObj);
             }
 
             if (remainBytes > 0)
             {
+                RandomAccessFile rf = new RandomAccessFile(filePath, "r");
+                rf.seek(0);
+                rf.seek(nrChunks * CHUNKSIZE);
                 byte[] data = new byte[remainBytes];
-                bis.read(data, nrChunks * CHUNKSIZE, remainBytes);
+                rf.read(data);
+                rf.close();
 
                 DownloadFileResponseObject downloadFileRespObj = new DownloadFileResponseObject("download", "client",
                                                                                                 downloadFileReqObj.fileName,
-                                                                                                nrChunks * CHUNKSIZE, CHUNKSIZE, data);
+                                                                                                nrChunks * CHUNKSIZE, remainBytes, data, f.length());
                 this.responseQueue.add(downloadFileRespObj);
             }
 
-            bis.close();    
             db.con.close();
         } catch (Exception ex) {
                 Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
