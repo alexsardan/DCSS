@@ -187,10 +187,10 @@ class RequestHandler implements Runnable
                         }  
                         
                         Database db = new Database(this.idServer);
-                        db.insertUploadEntry(filePathString, createFileReqObj.fileLength);
+                        db.insertUploadEntry(createFileReqObj.owner, filePathString, createFileReqObj.fileLength);
                         db.con.close();
                         
-                        if (createFileReqObj.equals("push_data_first") == false)
+                        if (createFileReqObj.type.equals("push_data_first") == false)
                         {
                             ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", filePathString);
                             this.responseQueue.add(replyMessage);
@@ -207,11 +207,6 @@ class RequestHandler implements Runnable
                     Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-            else
-            {
-                ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", "NACK");
-                this.responseQueue.add(replyMessage);
-            }
         } catch (SQLException ex) {
             Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -223,76 +218,89 @@ class RequestHandler implements Runnable
         try {
             UploadFileRequestObject uploadFileReqObj = (UploadFileRequestObject)qenericRequest;
             
+            CreateFileRequestObject cfro = new CreateFileRequestObject("push_data_first", uploadFileReqObj.session_key, 
+                                                                        uploadFileReqObj.fileName, uploadFileReqObj.accessType,
+                                                                        uploadFileReqObj.fileLength, uploadFileReqObj.owner);
+            createFile(cfro);
+            
             Database db = new Database(this.idServer);
             
-            raf = new RandomAccessFile(uploadFileReqObj.filePath, "rw");
+            String filePath = "";
+            
+            if (uploadFileReqObj.type.equals("push_data") == true)
+                filePath = new Database(this.idServer).getUploadEntry(uploadFileReqObj.owner, uploadFileReqObj.fileName);
+            else
+                filePath = uploadFileReqObj.filePath;
+            
+            raf = new RandomAccessFile(filePath, "rw");
             raf.seek(0);
             raf.seek(uploadFileReqObj.offsetChunk);
             raf.write(uploadFileReqObj.chunk);
             raf.close();
             
-            db.updateUploadEntry(uploadFileReqObj.filePath, uploadFileReqObj.chunkLength);
-            if (db.isUploadFinished(uploadFileReqObj.filePath) == true)
+            db.updateUploadEntry(filePath, uploadFileReqObj.chunkLength);
+            if (db.isUploadFinished(filePath) == true)
             {
-                db.deleteUploadEntry(uploadFileReqObj.filePath);
+                db.deleteUploadEntry(filePath);
                 
-                int indexFileNameBegin = uploadFileReqObj.filePath.lastIndexOf("/");
-                String fileName = uploadFileReqObj.filePath.substring(indexFileNameBegin + 1);
-                int indexFilePermissionBegin = uploadFileReqObj.filePath.lastIndexOf("/", indexFileNameBegin - 1);
-                String filePermission = uploadFileReqObj.filePath.substring(indexFilePermissionBegin, indexFileNameBegin);
+                int indexFileNameBegin = filePath.lastIndexOf("/");
+                String fileName = filePath.substring(indexFileNameBegin + 1);
+                int indexFilePermissionBegin = filePath.lastIndexOf("/", indexFileNameBegin - 1);
+                String filePermission = filePath.substring(indexFilePermissionBegin + 1, indexFileNameBegin);
                 int permission = filePermission.equals("private") ? 1 : 0;
                         
                 int firstUnderscore = fileName.lastIndexOf("_");
                 int secondUnderscore = fileName.lastIndexOf("_", firstUnderscore - 1);
                 
                 int session_key = 0;
-                if (uploadFileReqObj.type.equals("push_data_first"))
+                if (uploadFileReqObj.type.equals("push_data"))
                     session_key = new Database(this.idServer).getId(uploadFileReqObj.owner);
                 else 
                     session_key = uploadFileReqObj.session_key;
                 
-                db.addFile(session_key, fileName.substring(0, secondUnderscore), permission, uploadFileReqObj.filePath);
+                db.addFile(session_key, fileName.substring(0, secondUnderscore), permission, filePath);
                 
                 if (uploadFileReqObj.type.equals("push_data") == false)
                 {
                     ReplyMessage replyMessage = new ReplyMessage("create_user", "client", "ACK");
                     this.responseQueue.add(replyMessage);
 
-                    File f = new File(uploadFileReqObj.filePath);
-                    ReplicaFileResponseObject createFileRespObj = new ReplicaFileResponseObject("push_data_first", "server",
-                                                                                              fileName, filePermission, f.length(), uploadFileReqObj.owner);
-                    this.responseQueue.add(createFileRespObj);
-
-                    FileInputStream fileInputStream = new FileInputStream(uploadFileReqObj.filePath);
-                    BufferedInputStream bis = new BufferedInputStream(fileInputStream);
-
+                    File f = new File(filePath);
+                    
                     int nrChunks = (int) (f.length() / CHUNKSIZE);
                     int remainBytes = (int) (f.length() - nrChunks * CHUNKSIZE);
 
                     for (int i = 0 ; i < nrChunks ; i++)
                     {
+                        RandomAccessFile rf = new RandomAccessFile(filePath, "r");
+                        rf.seek(0);
+                        rf.seek(i * CHUNKSIZE);
                         byte[] data = new byte[CHUNKSIZE];
-                        bis.read(data, i * CHUNKSIZE, CHUNKSIZE);
+                        rf.read(data);
+                        rf.close();
 
-                        ReplicaUploadFileResponse replicaUploadFileResp = new ReplicaUploadFileResponse("push_data", "server", 
-                                                                                                        fileName, i * CHUNKSIZE,
-                                                                                                        CHUNKSIZE, data, uploadFileReqObj.owner);
+                        ReplicaUploadFileResponse replicaUploadFileResp = new ReplicaUploadFileResponse("push_data", "server", uploadFileReqObj.fileName,
+                                                                                                        uploadFileReqObj.filePath, uploadFileReqObj.accessType,
+                                                                                                        uploadFileReqObj.fileLength, uploadFileReqObj.owner,
+                                                                                                        i * CHUNKSIZE, data, CHUNKSIZE);
                         this.responseQueue.add(replicaUploadFileResp);
                     }
 
                     if (remainBytes > 0)
                     {
+                        RandomAccessFile rf = new RandomAccessFile(filePath, "r");
+                        rf.seek(0);
+                        rf.seek(nrChunks * CHUNKSIZE);
                         byte[] data = new byte[remainBytes];
-                        bis.read(data, nrChunks * CHUNKSIZE, remainBytes);
+                        rf.read(data);
+                        rf.close();
 
-                        ReplicaUploadFileResponse replicaUploadFileResp = new ReplicaUploadFileResponse("push_data", "server", 
-                                                                                                        fileName, nrChunks * CHUNKSIZE,
-                                                                                                        remainBytes, data, uploadFileReqObj.owner);
+                        ReplicaUploadFileResponse replicaUploadFileResp = new ReplicaUploadFileResponse("push_data", "server", uploadFileReqObj.fileName,
+                                                                                                        uploadFileReqObj.filePath, uploadFileReqObj.accessType,
+                                                                                                        uploadFileReqObj.fileLength, uploadFileReqObj.owner,
+                                                                                                        nrChunks * CHUNKSIZE, data, remainBytes);
                         this.responseQueue.add(replicaUploadFileResp);
                     }
-
-                    bis.close();  
-                    fileInputStream.close();
                 }
             }
             
@@ -320,6 +328,7 @@ class RequestHandler implements Runnable
                 this.responseQueue.add(replyMessage);
                 return;
             }
+            
             fileInputStream = new FileInputStream(filePath);
             BufferedInputStream bis = new BufferedInputStream(fileInputStream);
 

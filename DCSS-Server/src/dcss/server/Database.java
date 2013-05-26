@@ -165,13 +165,14 @@ public class Database {
         return "";
     }
     
-    public boolean insertUploadEntry(String path, long totalSize)
+    public boolean insertUploadEntry(String owner, String path, long totalSize)
     {
         try 
         {
-            this.st = this.con.prepareStatement("INSERT INTO active_uploads (FilePath, TotalSize) VALUES (?, ?);");
-            this.st.setString(1, path);
-            this.st.setLong(2, totalSize);
+            this.st = this.con.prepareStatement("INSERT INTO active_uploads (Owner, FilePath, TotalSize) VALUES (?, ?, ?);");
+            this.st.setString(1, owner);
+            this.st.setString(2, path);
+            this.st.setLong(3, totalSize);
             this.st.executeUpdate();
             
         } catch (Exception ex)
@@ -233,6 +234,25 @@ public class Database {
         return false;
     }
     
+    public String getUploadEntry(String owner, String fileName)
+    {
+        try {
+            this.st = this.con.prepareStatement("SELECT FilePath FROM active_uploads WHERE Owner=?;");
+            this.st.setString(1, owner);
+            this.rs = this.st.executeQuery();
+            
+            while (rs.next())
+            {
+                String str =  rs.getString("FilePath");
+                if (str.indexOf(fileName) != -1)
+                    return str;
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+    
     public ArrayList<UploadFile> getFiles()
     {
         ArrayList<UploadFile> files = new ArrayList();
@@ -289,12 +309,11 @@ public class Database {
         }
         return null;
     }
-    
-    
+   
     public int getId (String name)
     {
         try {
-            this.st = this.con.prepareStatement("SELECT Id FROM Users WHERE Name=?;");
+            this.st = this.con.prepareStatement("SELECT Id FROM users WHERE Name=?;");
             this.st.setString(1, name);
             this.rs = this.st.executeQuery();
             
@@ -311,7 +330,7 @@ public class Database {
     public String getNameAfterID(int ID)
     {
         try {
-            this.st = this.con.prepareStatement("SELECT Name FROM Users WHERE Id=?;");
+            this.st = this.con.prepareStatement("SELECT Name FROM users WHERE Id=?;");
             this.st.setInt(1, ID);
             this.rs = this.st.executeQuery();
             

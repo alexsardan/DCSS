@@ -15,7 +15,6 @@ import my.generic.lib.CreateFileRequestObject;
 import my.generic.lib.GenericRequest;
 import my.generic.lib.GenericResponse;
 import my.generic.lib.LoginCreateRequestObject;
-import my.generic.lib.ReplicaFileResponseObject;
 import my.generic.lib.ReplicaUploadFileResponse;
 import my.generic.lib.ReplicaUserResponse;
 import my.generic.lib.UploadFileRequestObject;
@@ -27,11 +26,13 @@ import my.generic.lib.UploadFileRequestObject;
 public class TCPServerGroup extends ServerGroup {
 
     ArrayList<ObjectOutputStream> servers;
+    ArrayList<Integer> exchange;
     ArrayList<Socket> sockets;
     
     public TCPServerGroup() {
         servers = new ArrayList<>();
         sockets = new ArrayList<>();
+        this.exchange = new ArrayList<>();
     }
 
     @Override
@@ -43,11 +44,11 @@ public class TCPServerGroup extends ServerGroup {
                     case "create":
                         req = new LoginCreateRequestObject("push_user", 0, ((ReplicaUserResponse)resp).userName, ((ReplicaUserResponse)resp).password);
                         break;
-                    case "push_data_first":
-                        req = new CreateFileRequestObject("push_data_first", 0, ((ReplicaFileResponseObject)resp).fileName, ((ReplicaFileResponseObject)resp).accessType, ((ReplicaFileResponseObject)resp).fileLength, ((ReplicaFileResponseObject)resp).owner);
-                        break;
                     case "push_data":
-                        req = new UploadFileRequestObject("push_data", 0, ((ReplicaUploadFileResponse)resp).fileName, ((ReplicaUploadFileResponse)resp).offsetChunk, ((ReplicaUploadFileResponse)resp).chunk, ((ReplicaUploadFileResponse)resp).owner, (int)((ReplicaUploadFileResponse)resp).lengthChunk);
+                        req = new UploadFileRequestObject("push_data", 0, ((ReplicaUploadFileResponse)resp).fileName, ((ReplicaUploadFileResponse)resp).filePath,
+                                                          ((ReplicaUploadFileResponse)resp).accessType, ((ReplicaUploadFileResponse)resp).fileLength,
+                                                          ((ReplicaUploadFileResponse)resp).owner, ((ReplicaUploadFileResponse)resp).offsetChunk,
+                                                          ((ReplicaUploadFileResponse)resp).chunk, ((ReplicaUploadFileResponse)resp).chunkLength);
                         break;
                 }
                 if (req != null) {
@@ -64,7 +65,8 @@ public class TCPServerGroup extends ServerGroup {
         try {
             Socket newSocket = new Socket(hostname, port);
             ObjectOutputStream os = new ObjectOutputStream(newSocket.getOutputStream());
-            servers.add(os);
+            this.servers.add(os);
+            this.exchange.add(new Integer(0));
             this.sockets.add(newSocket);
             GenericRequest srvReq = new GenericRequest("new_server", 0);
             os.writeObject(srvReq);
@@ -78,6 +80,7 @@ public class TCPServerGroup extends ServerGroup {
     
     public synchronized void addExistingStream(ObjectOutputStream str) {
         this.servers.add(str);
+        this.exchange.add(new Integer(0));
     }
     
     public Socket getLastSocket() {
