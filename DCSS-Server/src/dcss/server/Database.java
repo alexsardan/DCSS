@@ -233,7 +233,7 @@ public class Database {
         return false;
     }
     
-        public ArrayList<UploadFile> getFiles()
+    public ArrayList<UploadFile> getFiles()
     {
         ArrayList<UploadFile> files = new ArrayList();
         
@@ -290,5 +290,56 @@ public class Database {
         return null;
     }
     
+    
+    public int getId (String name)
+    {
+        try {
+            this.st = this.con.prepareStatement("SELECT Id FROM Users WHERE Name=?;");
+            this.st.setString(1, name);
+            this.rs = this.st.executeQuery();
+            
+            if (rs.next())
+            {
+                return rs.getInt("Id");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return 0;
+    }
 
+    public String getNameAfterID(int ID)
+    {
+        try {
+            this.st = this.con.prepareStatement("SELECT Name FROM Users WHERE Id=?;");
+            this.st.setInt(1, ID);
+            this.rs = this.st.executeQuery();
+            
+            if (rs.next())
+            {
+                return rs.getString("Name");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+    
+        public int getFileID(String fileName, int idOwner)
+    {
+        try {
+            this.st = this.con.prepareStatement("SELECT Id FROM files WHERE Name=? AND Owner=?;");
+            this.st.setString(1, fileName);
+            this.st.setInt(2, idOwner);
+            this.rs = this.st.executeQuery();
+            
+            if (rs.next())
+            {
+                return rs.getInt("Id");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return -1;
+    }
 }

@@ -147,55 +147,65 @@ class RequestHandler implements Runnable
     
     public void createFile(GenericRequest qenericRequest)
     {
-        CreateFileRequestObject createFileReqObj = (CreateFileRequestObject)qenericRequest;
-        
-        String userHome = System.getProperty("user.home");
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String filePathString = userHome + "/SERVER" + this.idServer + "/" + 
-                                createFileReqObj.accessType + "/" + createFileReqObj.fileName +
-                                "_" + createFileReqObj.session_key + "_" + dateFormat.format(new Date());
-        
-        File f = new File(filePathString);
-        if(f.exists() == false)
-        {
-            try {
-                boolean checkCreation = f.createNewFile();
-                if (checkCreation == true)
-                {
-                    RandomAccessFile raf = new RandomAccessFile(f, "rw");  
-                    try  
-                    {  
-                        raf.setLength(createFileReqObj.fileLength);  
-                    }  
-                    finally  
-                    {  
-                        raf.close();  
-                    }  
-                    
-                    Database db = new Database(this.idServer);
-                    db.insertUploadEntry(filePathString, createFileReqObj.fileLength);
-                    
-                    if (createFileReqObj.equals("push_data_first") == false)
+        try {
+            CreateFileRequestObject createFileReqObj = (CreateFileRequestObject)qenericRequest;
+            
+            int session_key = 0;
+            if (createFileReqObj.type.equals("push_data_first"))
+                session_key = new Database(this.idServer).getId(createFileReqObj.owner);
+            else 
+                session_key = createFileReqObj.session_key;
+            
+            String userHome = System.getProperty("user.home");
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            String filePathString = userHome + "/SERVER" + this.idServer + "/" + 
+                                    createFileReqObj.accessType + "/" + createFileReqObj.fileName +
+                                    "_" + (session_key + "") + "_" + dateFormat.format(new Date());
+            
+            File f = new File(filePathString);
+            if(f.exists() == false)
+            {
+                try {
+                    boolean checkCreation = f.createNewFile();
+                    if (checkCreation == true)
                     {
-                        ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", filePathString);
+                        RandomAccessFile raf = new RandomAccessFile(f, "rw");
+                        try  
+                        {  
+                            raf.setLength(createFileReqObj.fileLength);  
+                        }  
+                        finally  
+                        {  
+                            raf.close();  
+                        }  
+                        
+                        Database db = new Database(this.idServer);
+                        db.insertUploadEntry(filePathString, createFileReqObj.fileLength);
+                        
+                        if (createFileReqObj.equals("push_data_first") == false)
+                        {
+                            ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", createFileReqObj.fileName);
+                            this.responseQueue.add(replyMessage);
+                        }
+                    }
+                    else
+                    {
+                        ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", "NACK");
                         this.responseQueue.add(replyMessage);
                     }
+                } catch (SQLException ex) {
+                    Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IOException ex) {
+                    Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                else
-                {
-                    ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", "NACK");
-                    this.responseQueue.add(replyMessage);
-                }
-            } catch (SQLException ex) {
-                Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IOException ex) {
-                Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
             }
-        }
-        else
-        {
-            ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", "NACK");
-            this.responseQueue.add(replyMessage);
+            else
+            {
+                ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", "NACK");
+                this.responseQueue.add(replyMessage);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
@@ -205,38 +215,50 @@ class RequestHandler implements Runnable
         try {
             UploadFileRequestObject uploadFileReqObj = (UploadFileRequestObject)qenericRequest;
             
-            fileOutputStream = new FileOutputStream(uploadFileReqObj.filePath);
+            Database db = new Database(this.idServer);
+            
+            int idOwner = db.getId(uploadFileReqObj.owner);
+            int idFile = db.getFileID(uploadFileReqObj.fileName, idOwner);
+            String filePath = db.getPath(idFile, uploadFileReqObj.fileName, idOwner);
+            
+            fileOutputStream = new FileOutputStream(filePath);
             BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream);
             bos.write(uploadFileReqObj.chunk, uploadFileReqObj.offsetChunk, uploadFileReqObj.chunk.length);
             bos.close();
             
-            Database db = new Database(this.idServer);
-            db.updateUploadEntry(uploadFileReqObj.filePath, uploadFileReqObj.chunk.length);
-            if (db.isUploadFinished(uploadFileReqObj.filePath) == true)
+            db.updateUploadEntry(filePath, uploadFileReqObj.chunk.length);
+            if (db.isUploadFinished(filePath) == true)
             {
-                db.deleteUploadEntry(uploadFileReqObj.filePath);
+                db.deleteUploadEntry(filePath);
                 
-                int indexFileNameBegin = uploadFileReqObj.filePath.lastIndexOf("/");
-                String fileName = uploadFileReqObj.filePath.substring(indexFileNameBegin);
-                int indexFilePermissionBegin = uploadFileReqObj.filePath.lastIndexOf("/", indexFileNameBegin - 1);
-                String filePermission = uploadFileReqObj.filePath.substring(indexFilePermissionBegin, indexFileNameBegin);
+                int indexFileNameBegin = filePath.lastIndexOf("/");
+                String fileName = filePath.substring(indexFileNameBegin);
+                int indexFilePermissionBegin = filePath.lastIndexOf("/", indexFileNameBegin - 1);
+                String filePermission = filePath.substring(indexFilePermissionBegin, indexFileNameBegin);
                 int permission = filePermission.equals("private") ? 1 : 0;
                         
                 int firstUnderscore = fileName.lastIndexOf("_");
                 int secondUnderscore = fileName.lastIndexOf("_", firstUnderscore - 1);
-                db.addFile(uploadFileReqObj.session_key, fileName.substring(0, secondUnderscore), permission, uploadFileReqObj.filePath);
+                
+                int session_key = 0;
+                if (uploadFileReqObj.type.equals("push_data_first"))
+                    session_key = new Database(this.idServer).getId(uploadFileReqObj.owner);
+                else 
+                    session_key = uploadFileReqObj.session_key;
+                
+                db.addFile(session_key, fileName.substring(0, secondUnderscore), permission, filePath);
                 
                 if (uploadFileReqObj.type.equals("push_data") == false)
                 {
                     ReplyMessage replyMessage = new ReplyMessage("create_user", "client", "ACK");
                     this.responseQueue.add(replyMessage);
 
-                    File f = new File(uploadFileReqObj.filePath);
+                    File f = new File(filePath);
                     ReplicaFileResponseObject createFileRespObj = new ReplicaFileResponseObject("push_data_first", "server",
                                                                                               fileName, filePermission, f.length());
                     this.responseQueue.add(createFileRespObj);
 
-                    FileInputStream fileInputStream = new FileInputStream(uploadFileReqObj.filePath);
+                    FileInputStream fileInputStream = new FileInputStream(filePath);
                     BufferedInputStream bis = new BufferedInputStream(fileInputStream);
 
                     int nrChunks = (int) (f.length() / CHUNKSIZE);
@@ -302,7 +324,7 @@ class RequestHandler implements Runnable
             File f = new File(filePath);
             CreateFileRequestObject createFileReqObj = new CreateFileRequestObject("create_file",
                                                        downloadFileReqObj.session_key, downloadFileReqObj.fileName,
-                                                       null, f.length());
+                                                       null, f.length(), db.getNameAfterID(downloadFileReqObj.session_key));
             this.responseQueue.add(createFileReqObj);
             
             int nrChunks = (int) (f.length() / CHUNKSIZE);
