@@ -95,7 +95,9 @@ class RequestHandler implements Runnable
         LoginCreateRequestObject lcro = (LoginCreateRequestObject)qenericRequest;
         
         try {
-            int idClient = new Database(this.idServer).logIn(lcro.userName, lcro.password);
+            Database db = new Database(this.idServer);
+            int idClient = db.logIn(lcro.userName, lcro.password);
+            db.con.close();
             if (idClient != 0)
             {
                 ReplyMessage replyMessage = new ReplyMessage("login", "client", idClient + "");
@@ -116,7 +118,9 @@ class RequestHandler implements Runnable
         try {
             LoginCreateRequestObject lcro = (LoginCreateRequestObject)qenericRequest;
             
-            boolean answerCreateUser = new Database(this.idServer).addUser(lcro.userName, lcro.password);
+            Database db = new Database(this.idServer);
+            boolean answerCreateUser = db.addUser(lcro.userName, lcro.password);
+            db.con.close();
             if ((answerCreateUser == true) && (lcro.type.equals("push_user") == false))
             {
                 ReplyMessage replyMessage = new ReplyMessage("create", "client", "ACK");
@@ -156,7 +160,11 @@ class RequestHandler implements Runnable
             
             int session_key = 0;
             if (createFileReqObj.type.equals("push_data_first"))
-                session_key = new Database(this.idServer).getId(createFileReqObj.owner);
+            {
+                Database db = new Database(this.idServer);
+                session_key = db.getId(createFileReqObj.owner);
+                db.con.close();
+            }
             else 
                 session_key = createFileReqObj.session_key;
             
@@ -186,9 +194,9 @@ class RequestHandler implements Runnable
                             raf.close();  
                         }  
                         
-                        Database db = new Database(this.idServer);
-                        db.insertUploadEntry(createFileReqObj.owner, filePathString, createFileReqObj.fileLength);
-                        db.con.close();
+                        Database db1 = new Database(this.idServer);
+                        db1.insertUploadEntry(createFileReqObj.owner, filePathString, createFileReqObj.fileLength);
+                        db1.con.close();
                         
                         if (createFileReqObj.type.equals("push_data_first") == false)
                         {
@@ -228,7 +236,11 @@ class RequestHandler implements Runnable
             String filePath = "";
             
             if (uploadFileReqObj.type.equals("push_data") == true)
-                filePath = new Database(this.idServer).getUploadEntry(uploadFileReqObj.owner, uploadFileReqObj.fileName);
+            {
+                Database db1 = new Database(this.idServer);
+                filePath = db1.getUploadEntry(uploadFileReqObj.owner, uploadFileReqObj.fileName);
+                db1.con.close();
+            }
             else
                 filePath = uploadFileReqObj.filePath;
             

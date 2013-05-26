@@ -115,14 +115,20 @@ public abstract class ResponseHandler extends Thread {
                 try {
                     RandomAccessFile raf = null;
                     
-                    String path = System.getProperty("user.home")+"/CLIENT_" + client.sessionKey +"/"+fragment.fileName;
-                    File f = new File(path);
+                    String path = System.getProperty("user.home")+"/CLIENT_" + client.sessionKey + "/" + fragment.fileName;
+                    String pathFolder = System.getProperty("user.home")+"/CLIENT_" + client.sessionKey;
+                    
+                    File f = new File(pathFolder);
                     if (f.exists() == false)
+                        f.mkdirs();
+                    
+                    File ff = new File(path);
+                    if (ff.exists() == false)
                     {
-                        boolean checkCreation = f.createNewFile();
+                        boolean checkCreation = ff.createNewFile();
                         if (checkCreation == true)
                         {
-                            RandomAccessFile rf = new RandomAccessFile(f, "rw");
+                            RandomAccessFile rf = new RandomAccessFile(ff, "rw");
                             try  
                             {  
                                 rf.setLength(fragment.fileLength);  

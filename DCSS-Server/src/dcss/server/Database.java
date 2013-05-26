@@ -24,7 +24,7 @@ public class Database {
     
     public Database (int id) throws SQLException
     {
-        String url = "jdbc:mysql://localhost/fileserver_" + id;
+        String url = "jdbc:mysql://127.0.0.1/fileserver_" + id;
         this.con = DriverManager.getConnection(url, "root", "root");  
     }    
     

@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import java.net.SocketException;
 /**
  *
  * @author Alex
@@ -23,15 +24,17 @@ import java.util.logging.Logger;
 public class DCSSServer {
     public static final int PMODULE_SIZE = 16;
     public static final int MAX_CONNECTIONS = 32;
+    public static final String ConfigFileName = "C://Users/Alex/apmon.conf";
     
     ExecutorService processingService;
     public int id;
     public String host;
     public int port;
     public String type;
+  
 
     public DCSSServer(int size) {
-        this.processingService = Executors.newFixedThreadPool(size);        
+        this.processingService = Executors.newFixedThreadPool(size);     
     }
     
     public void finishProcessingAndDestroy() {
