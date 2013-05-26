@@ -333,10 +333,11 @@ class RequestHandler implements Runnable
             BufferedInputStream bis = new BufferedInputStream(fileInputStream);
 
             File f = new File(filePath);
-            CreateFileRequestObject createFileReqObj = new CreateFileRequestObject("create_file",
+            /*CreateFileRequestObject createFileReqObj = new CreateFileRequestObject("create_file",
                                                        downloadFileReqObj.session_key, downloadFileReqObj.fileName,
-                                                       null, f.length(), db.getNameAfterID(downloadFileReqObj.session_key));
-            this.responseQueue.add(createFileReqObj);
+                                                       null, f.length(), db.getNameAfterID(downloadFileReqObj.session_key));*/
+            CreateFileResponseObject fileRespObj = new CreateFileResponseObject("create_file", "client", downloadFileReqObj.fileName, "", f.length());
+            this.responseQueue.add(fileRespObj);
             
             int nrChunks = (int) (f.length() / CHUNKSIZE);
             int remainBytes = (int) (f.length() - nrChunks * CHUNKSIZE);
@@ -364,10 +365,8 @@ class RequestHandler implements Runnable
 
             bis.close();    
             db.con.close();
-        } catch (IOException ex) {
-            Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SQLException ex) {
-            Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+                Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             try {
                 fileInputStream.close();

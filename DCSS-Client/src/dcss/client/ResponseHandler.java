@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -112,9 +113,15 @@ public abstract class ResponseHandler extends Thread {
             case "download":
                 DownloadFileResponseObject fragment = (DownloadFileResponseObject)req;
                 try {
-                    BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fragment.fileName));
+                    RandomAccessFile raf = null;
+                    raf = new RandomAccessFile(System.getProperty("user.home")+"/CLIENT_" + client.sessionKey +"/"+fragment.fileName, "rw");
+                    raf.seek(0);
+                    raf.seek(fragment.offsetChunk);
+                    raf.write(fragment.chunk);
+                    raf.close();
+                    /*BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fragment.fileName));
                     out.write(fragment.chunk, fragment.offsetChunk, fragment.chunk.length);
-                    out.close();
+                    out.close();*/
                 } catch (FileNotFoundException ex) {
                     Logger.getLogger(DCSSClient.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (IOException ex) {
@@ -133,19 +140,61 @@ public abstract class ResponseHandler extends Thread {
                 UploadHandler up = new UploadHandler(client, rep.answer);
                 up.start();
                 break;
+                
+            case "create_file":
+                try {
+                    CreateFileResponseObject resp = (CreateFileResponseObject) req;
+                    String filePath = System.getProperty("user.home")+"/CLIENT_" + client.sessionKey +"/" + resp.fileName;
+                    File f = new File(filePath);
+                    File folder = new File(filePath.substring(0, filePath.lastIndexOf("/")));
+                    
+                    if (folder.exists() == false)
+                        folder.mkdirs();
+                    
+                    if(f.exists() == false)
+                    {
+                        try {
+                            boolean checkCreation = f.createNewFile();
+                            if (checkCreation == true)
+                            {
+                                RandomAccessFile raf = new RandomAccessFile(f, "rw");
+
+                                try  
+                                {  
+                                    raf.setLength(resp.fileLength);  
+                                }  
+                                finally  
+                                {  
+                                    raf.close();  
+                                }
+                            }
+                        } catch (Exception ex)
+                            {
+                                ;
+                            }                    
+                    }
+                } catch (Exception ex)
+                {
+                    ;
+                }
+                break;
         }
         
         return true;
     }
     
     public String showFiles(ArrayList<UploadFile> files)
-    {
-        String file = "Id        Nume fisier           Owner            Privat              Data adaugat \n";
+    { 
+        String file = " Id       Nume fisier               Owner      Privat          Data adaugat     \n";
+        StringBuilder sb = new StringBuilder();
+        sb.append(file);
+        
         for(UploadFile f:files)
         {
-            file += f.id + f.name + f.ownerName +  ((f.privat == 0)?"NU":"DA") + f.dateAdded + "\n";
-        }
-        
-        return file;
+            file = String.format("   %-7s  ",f.id) + String.format("%-25s ", f.name) + String.format("%-12s", f.ownerName) + String.format("%-14s ", (f.privat == 0)?"NU":"DA") + f.dateAdded +"\n";
+            sb.append(file);
+        }        
+
+        return sb.toString();
     }
 }
