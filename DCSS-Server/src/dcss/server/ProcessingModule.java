@@ -184,7 +184,7 @@ class RequestHandler implements Runnable
                         
                         if (createFileReqObj.equals("push_data_first") == false)
                         {
-                            ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", createFileReqObj.fileName);
+                            ReplyMessage replyMessage = new ReplyMessage("upload_first", "client", filePathString);
                             this.responseQueue.add(replyMessage);
                         }
                     }
@@ -217,24 +217,20 @@ class RequestHandler implements Runnable
             
             Database db = new Database(this.idServer);
             
-            int idOwner = db.getId(uploadFileReqObj.owner);
-            int idFile = db.getFileID(uploadFileReqObj.fileName, idOwner);
-            String filePath = db.getPath(idFile, uploadFileReqObj.fileName, idOwner);
-            
-            fileOutputStream = new FileOutputStream(filePath);
+            fileOutputStream = new FileOutputStream(uploadFileReqObj.filePath);
             BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream);
             bos.write(uploadFileReqObj.chunk, uploadFileReqObj.offsetChunk, uploadFileReqObj.chunk.length);
             bos.close();
             
-            db.updateUploadEntry(filePath, uploadFileReqObj.chunk.length);
-            if (db.isUploadFinished(filePath) == true)
+            db.updateUploadEntry(uploadFileReqObj.filePath, uploadFileReqObj.chunk.length);
+            if (db.isUploadFinished(uploadFileReqObj.filePath) == true)
             {
-                db.deleteUploadEntry(filePath);
+                db.deleteUploadEntry(uploadFileReqObj.filePath);
                 
-                int indexFileNameBegin = filePath.lastIndexOf("/");
-                String fileName = filePath.substring(indexFileNameBegin);
-                int indexFilePermissionBegin = filePath.lastIndexOf("/", indexFileNameBegin - 1);
-                String filePermission = filePath.substring(indexFilePermissionBegin, indexFileNameBegin);
+                int indexFileNameBegin = uploadFileReqObj.filePath.lastIndexOf("/");
+                String fileName = uploadFileReqObj.filePath.substring(indexFileNameBegin);
+                int indexFilePermissionBegin = uploadFileReqObj.filePath.lastIndexOf("/", indexFileNameBegin - 1);
+                String filePermission = uploadFileReqObj.filePath.substring(indexFilePermissionBegin, indexFileNameBegin);
                 int permission = filePermission.equals("private") ? 1 : 0;
                         
                 int firstUnderscore = fileName.lastIndexOf("_");
@@ -246,19 +242,19 @@ class RequestHandler implements Runnable
                 else 
                     session_key = uploadFileReqObj.session_key;
                 
-                db.addFile(session_key, fileName.substring(0, secondUnderscore), permission, filePath);
+                db.addFile(session_key, fileName.substring(0, secondUnderscore), permission, uploadFileReqObj.filePath);
                 
                 if (uploadFileReqObj.type.equals("push_data") == false)
                 {
                     ReplyMessage replyMessage = new ReplyMessage("create_user", "client", "ACK");
                     this.responseQueue.add(replyMessage);
 
-                    File f = new File(filePath);
+                    File f = new File(uploadFileReqObj.filePath);
                     ReplicaFileResponseObject createFileRespObj = new ReplicaFileResponseObject("push_data_first", "server",
                                                                                               fileName, filePermission, f.length(), uploadFileReqObj.owner);
                     this.responseQueue.add(createFileRespObj);
 
-                    FileInputStream fileInputStream = new FileInputStream(filePath);
+                    FileInputStream fileInputStream = new FileInputStream(uploadFileReqObj.filePath);
                     BufferedInputStream bis = new BufferedInputStream(fileInputStream);
 
                     int nrChunks = (int) (f.length() / CHUNKSIZE);
