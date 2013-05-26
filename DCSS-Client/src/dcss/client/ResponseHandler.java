@@ -6,6 +6,7 @@ package dcss.client;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -33,16 +34,24 @@ public abstract class ResponseHandler extends Thread {
         @Override
         public void run() {
             try {
-                String tmp = filename.substring(filename.lastIndexOf("/")+1);
+                String tmp = filename.substring(filename.lastIndexOf("/") + 1);
                 String fn = tmp.substring(0, tmp.lastIndexOf("_"));
                 String fnn = fn.substring(0, fn.lastIndexOf("_"));
+                
+                int lastSlash = filename.lastIndexOf("/");
+                int firstSlash = filename.lastIndexOf("/", lastSlash - 1);
+                String accessType = filename.substring(firstSlash + 1, lastSlash);
+                File f = new File(filename);
+                
                 BufferedInputStream buf = new BufferedInputStream(new FileInputStream(fnn));
                 byte[] buffer = new byte[CHUNKSIZE];
                 int off = 0;
                 int bytesRead = 0;
                 try {
                     while ((bytesRead = buf.read(buffer)) != -1) {
-                        UploadFileRequestObject upf = new UploadFileRequestObject("upload", this.cl.sessionKey, this.filename, off, buffer, cl.lastLoginName,bytesRead);
+                        UploadFileRequestObject upf = new UploadFileRequestObject("upload", this.cl.sessionKey, fnn, this.filename, 
+                                                                                  accessType, f.length(), this.cl.lastLoginName,
+                                                                                  off, buffer,bytesRead);
                         off += bytesRead;
                         this.cl.serverRequest.sendRequest(upf);
                     }
