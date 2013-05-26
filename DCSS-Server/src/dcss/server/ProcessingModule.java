@@ -255,7 +255,7 @@ class RequestHandler implements Runnable
 
                     File f = new File(filePath);
                     ReplicaFileResponseObject createFileRespObj = new ReplicaFileResponseObject("push_data_first", "server",
-                                                                                              fileName, filePermission, f.length());
+                                                                                              fileName, filePermission, f.length(), uploadFileReqObj.owner);
                     this.responseQueue.add(createFileRespObj);
 
                     FileInputStream fileInputStream = new FileInputStream(filePath);
@@ -271,7 +271,7 @@ class RequestHandler implements Runnable
 
                         ReplicaUploadFileResponse replicaUploadFileResp = new ReplicaUploadFileResponse("push_data", "server", 
                                                                                                         fileName, i * CHUNKSIZE,
-                                                                                                        CHUNKSIZE, data);
+                                                                                                        CHUNKSIZE, data, uploadFileReqObj.owner);
                         this.responseQueue.add(replicaUploadFileResp);
                     }
 
@@ -282,7 +282,7 @@ class RequestHandler implements Runnable
 
                         ReplicaUploadFileResponse replicaUploadFileResp = new ReplicaUploadFileResponse("push_data", "server", 
                                                                                                         fileName, nrChunks * CHUNKSIZE,
-                                                                                                        remainBytes, data);
+                                                                                                        remainBytes, data, uploadFileReqObj.owner);
                         this.responseQueue.add(replicaUploadFileResp);
                     }
 
