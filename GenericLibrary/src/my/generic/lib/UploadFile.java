@@ -34,11 +34,10 @@ public class UploadFile implements Serializable
     public boolean equals(Object other)
     {
         UploadFile cmp = (UploadFile)other;
-        if ((this.id == cmp.id) && (this.name.equals(cmp.name)) && (this.owner == cmp.owner) &&
-             (this.ownerName.equals(cmp.ownerName)) && (this.privat == cmp.privat) &&
-             (this.path.equals(cmp.path)) && (this.dateAdded.equals(cmp.dateAdded)))
-            return true;
+        if ((this.name.equals(cmp.name)) && (this.ownerName.equals(cmp.ownerName)) &&
+            (this.privat == cmp.privat) && (this.path.equals(cmp.path)) && (this.dateAdded.equals(cmp.dateAdded)))
+            return false;
         
-        return false;
+        return true;
     }
 }

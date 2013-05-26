@@ -1,6 +1,8 @@
 package my.generic.lib;
 
-public class User 
+import java.io.Serializable;
+
+public class User implements Serializable
 {
     
     public String name;
@@ -17,8 +19,8 @@ public class User
     {
         User cmp = (User)other;
         if ((this.name.equals(cmp.name)) && (this.password.equals(cmp.password)))
-            return true;
+            return false;
         
-        return false;
+        return true;
     }
 }

@@ -258,7 +258,7 @@ public class Database {
         ArrayList<UploadFile> files = new ArrayList();
         
         try {
-            this.st = this.con.prepareStatement("SELECT * from Files");           
+            this.st = this.con.prepareStatement("SELECT * from Files INNER JOIN Users ON Files.Owner = Users.Id");           
             this.rs = this.st.executeQuery();
             
             while(this.rs.next())

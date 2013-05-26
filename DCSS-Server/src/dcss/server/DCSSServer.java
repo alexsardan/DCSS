@@ -71,7 +71,7 @@ public class DCSSServer {
                             serverInstance.type = parts[1];
                             switch(parts[1]) {
                                 case "TCP":
-                                    sg = new TCPServerGroup();
+                                    sg = new TCPServerGroup(serverInstance.id);
                                     break;
                                 default:
                                     Logger.getLogger(DCSSServer.class.getName()).log(Level.WARNING, "Server does not support this type of connection: {0}", parts[1]);

@@ -45,7 +45,7 @@ public class TCPServiceThread extends ServiceThread {
                 while (true) {
                     try {
                         resp = this.sendQueue.take();
-                        if (resp.dest.equals("server")) {
+                        if ((resp.dest != null && resp.dest.equals("server")) || resp.type.equals("update")) {
                             this.sg.sendAll(resp);
                         } else if (resp.dest.equals("client")) {
                             this.out.writeObject(resp);

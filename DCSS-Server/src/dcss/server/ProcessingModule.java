@@ -306,7 +306,7 @@ class RequestHandler implements Runnable
             
             db.con.close();
         } catch (SQLException ex) {
-            Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
+            
         } catch (IOException ex) {
             Logger.getLogger(RequestHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -385,9 +385,9 @@ class RequestHandler implements Runnable
             ArrayList<UploadFile> filesList = db.getFiles();
             ArrayList<User> usersList = db.getUsers();
             
-            if (exchangeDatabase.action.equals("exchange"))
+            if (exchangeDatabase.type.equals("exchange"))
             {
-                ExchangeDatabase exData = new ExchangeDatabase("update", filesList, usersList);
+                ExchangeDatabaseResponse exData = new ExchangeDatabaseResponse("update", filesList, usersList);
                 this.responseQueue.add(exData);
             }
             
