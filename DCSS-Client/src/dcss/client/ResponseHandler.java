@@ -33,7 +33,10 @@ public abstract class ResponseHandler extends Thread {
         @Override
         public void run() {
             try {
-                BufferedInputStream buf = new BufferedInputStream(new FileInputStream(filename));
+                String tmp = filename.substring(filename.lastIndexOf("/"));
+                String fn = tmp.substring(0, tmp.lastIndexOf("_"));
+                String fnn = fn.substring(0, fn.lastIndexOf("_"));
+                BufferedInputStream buf = new BufferedInputStream(new FileInputStream(fnn));
                 byte[] buffer = new byte[CHUNKSIZE];
                 int off = 0;
                 int bytesRead = 0;

@@ -93,10 +93,10 @@ public class DCSSClient {
                 }
                 
             case "upload":
-                if (st.countTokens() == 3) {
+                if (st.countTokens() == 2) {
                     String filename = st.nextToken();
                     String access = st.nextToken();
-                    if ((!access.equals("public")) || (!access.equals("private")))
+                    if ((!access.equals("public")) && (!access.equals("private")))
                         return "Access modifiers should be 'public' or 'private'";
                     File f = new File(filename);
                     CreateFileRequestObject newFileCreateReq = new CreateFileRequestObject("upload_first", this.sessionKey, filename, access, f.length(), this.lastLoginName);
